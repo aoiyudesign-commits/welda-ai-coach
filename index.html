@@ -118,7 +118,11 @@
   .hc-delta{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted); font-weight:600; margin-top:13px;}
   .hc-delta .dc{width:20px; height:20px; border-radius:50%; background:#e2f3e8; color:#2fa15f; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;}
   .hero-center .statsbar{text-align:left;}
-  .herochart{margin-top:16px;} .herochart svg{width:100%; height:206px; display:block;}
+  .hc-bar{height:8px; border-radius:5px; background:#eeeef6; overflow:hidden; margin:16px auto 0; max-width:240px;}
+  .hc-bar>i{display:block; height:100%; border-radius:5px; background:linear-gradient(90deg,#8b7cf0,#b3a3f6);}
+  .herotrend{display:flex; align-items:center; justify-content:space-between; margin:22px 2px 6px; font-size:13px; font-weight:800;}
+  .herotrend .ht-sel{font-size:12px; font-weight:700; color:var(--muted);}
+  .herochart{margin-top:4px;} .herochart svg{width:100%; height:176px; display:block;}
   .statsbar{display:flex; align-items:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--line);}
   .statsbar .st{flex:1; padding-left:4px;}
   .statsbar .sl{font-size:11px; color:#9a9bb0; font-weight:600; letter-spacing:.2px;}
@@ -562,7 +566,8 @@
               <div class="hdate-c">9월 18일(오늘) <span class="nav">‹ ›</span></div>
               <div class="hc-label">오전 18:35 · 센서 연동 모드</div>
               <div class="hc-val">96<span class="hc-unit">mg/dL</span></div>
-              <div class="hc-delta"><span class="dc">↓</span> 어제보다 14 mg/dL 낮아요</div>
+              <div class="hc-delta"><span class="dc">↓</span> 어제보다 14 mg/dL 낮아요 · 정상 범위</div>
+              <div class="herotrend"><span>혈당 추이</span><span class="ht-sel">오늘 ›</span></div>
               <div class="herochart" id="heroChart"></div>
               <div class="statsbar">
                 <div class="st"><div class="sl">혈당 점수</div><div class="sv">50<small>점</small></div></div>
@@ -869,31 +874,29 @@ function smoothD(a){
   return d;
 }
 function buildHeroChart(){
-  const P=[
-    [10.0,84],[10.4,86,"run"],[10.9,83],[11.3,85],[11.6,88,"food"],[12.0,87],[12.4,91],
-    [12.8,97],[13.1,94],[13.5,103],[13.9,114],[14.2,122],[14.5,116],[14.8,123],[15.1,126],
-    [15.4,118],[15.7,108],[16.0,108,"run"],[16.3,104],[16.7,109],[17.1,105],[17.5,109],[17.8,106],[18.0,105]
-  ];
-  const W=340,H=212,L=6,R=10,T=18,B=34, xmin=10,xmax=20, ymin=48,ymax=138;
+  // 과거(실선) → 현재(96) → 예측(점선)
+  const past=[[10,92],[11,98],[11.6,93],[12,104],[12.6,99],[13.2,118],[13.8,132],[14.2,126],[15,116],[15.8,121],[16.4,108],[17.2,101],[18,96]];
+  const proj=[[18,96],[18.7,99],[19.4,102],[20,100]];
+  const cur=96;
+  const W=340,H=176,L=8,R=10,T=34,B=22, xmin=10,xmax=20, ymin=82,ymax=140;
   const x=h=>L+(h-xmin)/(xmax-xmin)*(W-L-R), y=v=>T+(1-(v-ymin)/(ymax-ymin))*(H-T-B);
-  const base=H-B, P2=P.map(p=>[x(p[0]),y(p[1])]);
-  const MKPATH={
-    run:`<circle cx="14" cy="4.6" r="1.8"/><path d="M13.5 8.2l-3.5 3 2.6 3v4.4"/><path d="M10 11.2l-3.4 1.2"/><path d="M14.6 13l3.4 1.2"/><path d="M12.6 18.2l-2.6 3"/>`,
-    food:`<path d="M7 3v6a1.8 1.8 0 0 0 3.6 0V3"/><path d="M8.8 12v9"/><path d="M16.4 3c-1.3 0-2.2 2.2-2.2 5s.9 4 2.2 4"/><path d="M16.4 3v18"/>`
-  };
-  const band="";
-  const grid=[120,60].map(g=>`<line x1="${L}" y1="${y(g).toFixed(1)}" x2="${W-R}" y2="${y(g).toFixed(1)}" stroke="#cfc9e6" stroke-dasharray="2 4"/><text x="${(W-R-8).toFixed(1)}" y="${(y(g)+(g===120?14:-6)).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="#aaa6bd">${g}</text>`).join("");
-  // 부드러운 곡선: purple 전체 + 고혈당(>=110) 구간 red 오버레이
-  let rs=-1,re=-1; P.forEach((p,i)=>{ if(p[1]>=110){ if(rs<0)rs=i; re=i; } });
-  let segs=`<path d="${smoothD(P2)}" fill="none" stroke="#6a5cf0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
-  if(rs>=0){ const redPts=P2.slice(Math.max(0,rs-1), re+2); segs+=`<path d="${smoothD(redPts)}" fill="none" stroke="#ee5a6e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`; }
-  const marks=P.map((p,i)=>{ if(!p[2]) return ""; const cx=P2[i][0], cy=P2[i][1];
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="14" fill="#fff" stroke="#9b86f2" stroke-width="2"/><svg x="${(cx-7).toFixed(1)}" y="${(cy-7).toFixed(1)}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b5cf0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MKPATH[p[2]]}</svg>`;
-  }).join("");
-  const lx=P2[P2.length-1][0].toFixed(1), ly=P2[P2.length-1][1].toFixed(1);
-  const now=`<line x1="${lx}" y1="${T-4}" x2="${lx}" y2="${base+5}" stroke="#7d78e8" stroke-dasharray="2 4" stroke-width="1.2"/><circle cx="${lx}" cy="${ly}" r="6" fill="#6a5cf0" stroke="#fff" stroke-width="2.5"/>`;
-  const xl=[10,12,14,16,18,20].map(h=>`<line x1="${x(h).toFixed(1)}" y1="${base+9}" x2="${x(h).toFixed(1)}" y2="${base+14}" stroke="#cfc9e6" stroke-width="1.5"/><text x="${x(h).toFixed(1)}" y="${H-3}" text-anchor="middle" font-size="12" fill="#9b97b3">${h===20?'20':h+':00'}</text>`).join("");
-  return `<svg viewBox="0 0 ${W} ${H}">${band}${grid}${segs}${marks}${now}${xl}</svg>`;
+  const base=H-B;
+  const P=past.map(p=>[x(p[0]),y(p[1])]), Q=proj.map(p=>[x(p[0]),y(p[1])]);
+  const solid=smoothD(P), dash=smoothD(Q);
+  const area=`${solid} L${P[P.length-1][0].toFixed(1)},${base} L${P[0][0].toFixed(1)},${base} Z`;
+  const cx=P[P.length-1][0], cy=P[P.length-1][1];
+  // 현재 세로 마커 + 점
+  const marker=`<line x1="${cx.toFixed(1)}" y1="${(cy+6).toFixed(1)}" x2="${cx.toFixed(1)}" y2="${base}" stroke="#cfc9ee" stroke-width="1.4"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="#6053f3" stroke="#fff" stroke-width="2.5"/>`;
+  // 툴팁 버블 (현재값)
+  const bw=46,bh=23, bx=Math.max(2,Math.min(W-bw-2, cx-bw/2)), by=cy-bh-10;
+  const tip=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw}" height="${bh}" rx="11" fill="#2b2b30"/><text x="${(bx+bw/2).toFixed(1)}" y="${(by+15).toFixed(1)}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff">${cur}</text><path d="M${(cx-4).toFixed(1)},${(by+bh).toFixed(1)} L${(cx+4).toFixed(1)},${(by+bh).toFixed(1)} L${cx.toFixed(1)},${(by+bh+5).toFixed(1)} Z" fill="#2b2b30"/>`;
+  const xl=[10,13,16,18,20].map(h=>`<text x="${x(h).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="10" fill="#bcb9c8">${h}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:176px;display:block;">
+    <defs><linearGradient id="ha" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6053f3" stop-opacity=".2"/><stop offset="1" stop-color="#6053f3" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#ha)"/>
+    <path d="${solid}" fill="none" stroke="#6053f3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${dash}" fill="none" stroke="#c4bcf0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 5"/>
+    ${marker}${tip}${xl}</svg>`;
 }
 
 /* ====== 홈 렌더 ====== */
