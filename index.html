@@ -50,7 +50,7 @@
   .brand b{font-family:"Poppins",sans-serif; font-weight:700; font-size:16px; letter-spacing:-.2px; color:var(--green);}
   .title{font-size:23px; font-weight:800; margin-top:12px; line-height:1.3; letter-spacing:-.3px;}
   .subtitle{font-size:13px; color:var(--muted); margin-top:5px;}
-  .body{padding:16px 20px 26px;}
+  .body{padding:16px 20px 92px;}
 
   /* 공통 카드 (테두리 없이 떠 있는 흰 카드) */
   .scoreCard,.goal,.tl,.cgm,.card-pad,.stat,.summary,.med,.prod,.scard{
@@ -431,11 +431,23 @@
   .rank .rbar > i{display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--green),var(--grad-end));}
   .rank .rbar > i.hi{background:linear-gradient(90deg,#f3b066,#f0913a);}
   .rank-go{font-size:12.5px; font-weight:800; color:var(--green-d); margin-top:9px; cursor:pointer;}
-  /* 히트맵 */
-  .heatgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
-  .hmwd{font-size:10px; color:#9a9bb0; text-align:center; font-weight:600; padding-bottom:2px;}
-  .hmcell{aspect-ratio:1; border-radius:7px; background:#eeeef4;}
-  .hmcell.empty{background:transparent;}
+  /* 주간 혈당 점수 바 차트 (Practice Time 스타일) */
+  .ptchart{display:flex; gap:8px; height:150px;}
+  .pt-y{display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; width:26px; font-size:10px; color:#a2a6ac; font-weight:600; padding-bottom:18px;}
+  .pt-bars{flex:1; display:flex; align-items:flex-end; gap:8px;}
+  .ptb{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:7px;}
+  .ptb-col{width:64%; border-radius:8px 8px 4px 4px; background:linear-gradient(180deg,#8b7cf0,#b3a3f6); min-height:4px;}
+  .ptb-d{font-size:10.5px; color:var(--muted); font-weight:600;}
+  .pt-sum{display:flex; justify-content:space-between; margin-top:16px; padding-top:16px; border-top:1px solid var(--line);}
+  .pt-v{font-size:21px; font-weight:800;}
+  .pt-l{font-size:11px; color:var(--muted); margin-top:3px;}
+  .pt-s.right{text-align:right;}
+  /* 활동 기록 히트맵 (컴팩트, 요일=행) */
+  .hcmonths{display:flex; justify-content:space-between; font-size:11px; color:#9a9bb0; font-weight:700; margin-bottom:8px; padding:0 2px;}
+  .hcwrap{display:flex; gap:7px; align-items:center;}
+  .hcgrid{flex:1; display:grid; grid-template-rows:repeat(7,1fr); grid-auto-flow:column; gap:4px;}
+  .hc-cell{aspect-ratio:1; border-radius:3px;}
+  .hcdays{display:flex; flex-direction:column; justify-content:space-between; font-size:9.5px; color:#b3b5c2; font-weight:600; width:16px; text-align:right;}
   .heatlegend{display:flex; align-items:center; gap:4px; justify-content:flex-end; margin-top:13px; font-size:10px; color:#9a9bb0;}
   .heatlegend i{width:13px; height:13px; border-radius:4px; display:inline-block;}
   /* 음식 랭킹 안내 */
@@ -514,14 +526,11 @@
   .wcard .wd{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
   .wcard .wmeta{display:flex; gap:14px; margin-top:11px; font-size:11px; color:#9a9bb0; font-weight:600;}
 
-  /* ===== 하단 탭바 ===== */
-  .tabbar{display:flex; background:#fff; border-top:1px solid var(--line); padding:6px 4px 8px;}
-  .tab{flex:1; border:none; background:none; padding:8px 0 6px; font-family:inherit; cursor:pointer; color:#b7b8ce; display:flex; flex-direction:column; align-items:center; gap:4px;}
-  .tab .ti{font-size:19px; line-height:1;}
-  .tab .tl{font-size:10.5px; font-weight:700;}
-  .tab.active{color:var(--green);}
-  .tab.center .ti{width:48px; height:48px; margin-top:-18px; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(96,83,243,.4); font-size:21px;}
-  .tab.center.active .ti{filter:brightness(1.06);}
+  /* ===== 하단 탭바 (떠 있는 다크 pill) ===== */
+  .tabbar{position:absolute; left:50%; bottom:16px; transform:translateX(-50%); display:flex; gap:4px; background:#191c1f; border-radius:9999px; padding:7px 9px; box-shadow:0 12px 30px rgba(0,0,0,.32); z-index:40;}
+  .tab{border:none; background:none; cursor:pointer; padding:10px 14px; border-radius:9999px; color:rgba(255,255,255,.5); display:flex; align-items:center; justify-content:center; transition:color .15s, background .15s;}
+  .tab .ti{display:flex;} .tab .ti svg{width:22px; height:22px; display:block;}
+  .tab.active{color:#fff; background:rgba(255,255,255,.14);}
 </style>
 </head>
 <body>
@@ -684,10 +693,10 @@
             </div>
             <div class="sec">주요 발견</div>
             <div class="findings" id="findings"></div>
-            <div class="sec">🎯 목표 진행 상황</div>
-            <div class="card-pad" id="goalChart"></div>
-            <div class="sec">이번 달 혈당 점수 히트맵</div>
-            <div class="card-pad"><div id="heatmap"></div></div>
+            <div class="sec">주간 혈당 점수</div>
+            <div class="card-pad" id="weekBars"></div>
+            <div class="sec">활동 기록</div>
+            <div class="card-pad" id="heatmap"></div>
             <div class="sec">음식별 혈당 영향 랭킹</div>
             <div class="card-pad">
               <div class="ranknote">📋 최근 <b>식사기록</b>을 분석해, 식후 혈당을 많이 올린 메뉴 순으로 정리했어요.</div>
@@ -744,11 +753,11 @@
 
     <!-- ===================== 하단 탭바 ===================== -->
     <nav class="tabbar" id="tabbar">
-      <button class="tab active" data-target="home"><span class="ti">🏠</span><span class="tl">홈</span></button>
-      <button class="tab" data-target="record"><span class="ti">📝</span><span class="tl">기록</span></button>
-      <button class="tab center" data-target="coach"><span class="ti">🤖</span><span class="tl">AI 코치</span></button>
-      <button class="tab" data-target="report"><span class="ti">📖</span><span class="tl">웰니스</span></button>
-      <button class="tab" data-target="store"><span class="ti">🛒</span><span class="tl">스토어</span></button>
+      <button class="tab active" data-target="home" aria-label="홈"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span></button>
+      <button class="tab" data-target="record" aria-label="기록"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="3.6" cy="6" r="1.1"/><circle cx="3.6" cy="12" r="1.1"/><circle cx="3.6" cy="18" r="1.1"/></svg></span></button>
+      <button class="tab" data-target="coach" aria-label="AI 코치"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/><circle cx="9" cy="11.5" r="1" fill="currentColor" stroke="none"/><circle cx="13" cy="11.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="11.5" r="1" fill="currentColor" stroke="none"/></svg></span></button>
+      <button class="tab" data-target="report" aria-label="웰니스"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span></button>
+      <button class="tab" data-target="store" aria-label="스토어"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 4H5l2.3 11.3a1.6 1.6 0 0 0 1.6 1.3h8.2a1.6 1.6 0 0 0 1.6-1.3L21.5 8H6"/></svg></span></button>
     </nav>
   </div>
 
@@ -1237,16 +1246,32 @@ function renderWellness(){
 
 /* ====== 리포트 화면 ====== */
 // 한 달(30일) 일별 혈당 점수 — 점진적 개선 추세
-const MONTH=[52,58,49,61,55,63,57,60,54,66,62,58,70,64,68,61,72,66,59,74,69,71,65,77,73,68,79,75,72,80];
-const MONTH_OFFSET=1; // 달력 시작 빈 칸
-function hmColor(s){ return s>=80?'#6053f3': s>=72?'#9389ef': s>=64?'#c2bbf4': s>=56?'#f3c08a':'#ee8a6e'; }
+/* 주간 혈당 점수 바 차트 (Stats 레퍼런스 스타일) */
+const WK=[{d:"금",v:62},{d:"토",v:71},{d:"일",v:55},{d:"월",v:68},{d:"화",v:88},{d:"수",v:60},{d:"목",v:79}];
+function buildWeekBars(){
+  const avg=Math.round(WK.reduce((s,w)=>s+w.v,0)/WK.length), hi=Math.max(...WK.map(w=>w.v));
+  const bars=WK.map(w=>`<div class="ptb"><div class="ptb-col" style="height:${w.v}%"></div><div class="ptb-d">${w.d}</div></div>`).join("");
+  return `<div class="ptchart"><div class="pt-y"><span>100</span><span>50</span><span>0</span></div><div class="pt-bars">${bars}</div></div>
+    <div class="pt-sum"><div class="pt-s"><div class="pt-v">${avg}점</div><div class="pt-l">평균 점수</div></div><div class="pt-s right"><div class="pt-v">${hi}점</div><div class="pt-l">최고 점수</div></div></div>`;
+}
+
+/* 활동 기록 히트맵 (요일=행 · 주=열, 컴팩트) */
+const HWEEKS=11;
+function hmColor(s){ if(!s) return '#eef0f5'; return s>=80?'#6053f3': s>=66?'#8f86ee': s>=52?'#b9b2f2': s>=38?'#d7d3f5':'#ece9fb'; }
 function buildHeatmap(){
-  const wd=["일","월","화","수","목","금","토"];
-  let cells=wd.map(d=>`<div class="hmwd">${d}</div>`).join("");
-  for(let i=0;i<MONTH_OFFSET;i++) cells+=`<div class="hmcell empty"></div>`;
-  MONTH.forEach((s,i)=>{ cells+=`<div class="hmcell" style="background:${hmColor(s)}" title="${i+1}일 · ${s}점"></div>`; });
-  return `<div class="heatgrid">${cells}</div>
-    <div class="heatlegend"><span>낮음</span><i style="background:#ee8a6e"></i><i style="background:#f3c08a"></i><i style="background:#c2bbf4"></i><i style="background:#9389ef"></i><i style="background:#6053f3"></i><span>높음</span></div>`;
+  const N=HWEEKS*7, cells=[];
+  for(let i=0;i<N;i++){
+    let v=38+Math.round(i/N*46)+((i*37)%19)-9; v=Math.max(0,Math.min(100,v));
+    if(i>=N-3) v=0; // 미래(빈 칸)
+    cells.push(`<div class="hc-cell" style="background:${hmColor(v)}"></div>`);
+  }
+  const days=["월","화","수","목","금","토","일"].map(d=>`<div class="hc-day">${d}</div>`).join("");
+  return `<div class="hcmonths"><span>4월</span><span>5월</span><span>6월</span></div>
+    <div class="hcwrap">
+      <div class="hcgrid" style="grid-template-columns:repeat(${HWEEKS},1fr);">${cells.join("")}</div>
+      <div class="hcdays">${days}</div>
+    </div>
+    <div class="heatlegend"><span>낮음</span><i style="background:#ece9fb"></i><i style="background:#d7d3f5"></i><i style="background:#b9b2f2"></i><i style="background:#8f86ee"></i><i style="background:#6053f3"></i><span>높음</span></div>`;
 }
 const FOODS=[
   {n:"제육볶음 + 콜라", imp:107},{n:"짜장면·탕수육 세트", imp:90},{n:"김밥 + 라면", imp:76},
@@ -1279,7 +1304,7 @@ function renderReport(){
      <div class="finfo"><div class="frow"><span class="ft">${f.title}</span><span class="chev">›</span></div>
        <span class="fbadge ${f.scls}">${f.status}</span>
        <div class="fdesc">${f.desc}</div></div></div>`).join("");
-  document.getElementById("goalChart").innerHTML=buildGoalChart();
+  document.getElementById("weekBars").innerHTML=buildWeekBars();
   document.getElementById("heatmap").innerHTML=buildHeatmap();
   const max=Math.max(...FOODS.map(f=>f.imp));
   document.getElementById("foodRank").innerHTML=FOODS.map(f=>{
