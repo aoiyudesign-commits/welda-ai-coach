@@ -531,6 +531,15 @@
   .tab{border:none; background:none; cursor:pointer; padding:10px 14px; border-radius:9999px; color:rgba(255,255,255,.5); display:flex; align-items:center; justify-content:center; transition:color .15s, background .15s;}
   .tab .ti{display:flex;} .tab .ti svg{width:22px; height:22px; display:block;}
   .tab.active{color:#fff; background:rgba(255,255,255,.14);}
+
+  /* ===== 실제 모바일: 폰 프레임 해제 + 탭바 화면 하단 고정 ===== */
+  @media (max-width:480px){
+    body{padding:0; align-items:stretch; min-height:100dvh;}
+    .phone{max-width:100%; width:100%; height:100dvh; border-radius:0; box-shadow:none; border:none;}
+    .tabbar{position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);}
+    .body{padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));}
+    .top, .navbar{padding-top:max(16px, env(safe-area-inset-top, 0px));}
+  }
 </style>
 </head>
 <body>
