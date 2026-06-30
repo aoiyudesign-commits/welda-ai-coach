@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>웰다 AI 혈당코치 — 데모</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* Revolut 디자인 시스템 구조 + welda 퍼플 primary */
+  :root{
+    --green:#6053f3; --green-d:#4a42d1; --green-l:#eeedfb;   /* primary = welda purple */
+    --grad-end:#b15eff;
+    --ink:#191c1f; --muted:#505a63; --line:#e2e2e7;          /* Revolut ink/mute/hairline */
+    --stone:#8d969e; --faint:#c9c9cd;
+    --sci:#376cd5; --sci-bg:#eef3fb; --sci-line:#dde7f6;
+    --warn:#ec7e00; --warn-l:#fff4e6; --bg:#ffffff; --card:#ffffff;
+    --canvas-dark:#000000; --on-dark:#ffffff;
+    --sh:0 0 0 1px var(--line);        /* 그림자 대신 hairline ring (Revolut: no drop shadow) */
+    --sh-sm:0 0 0 1px var(--line);
+    --sh-h:0 0 0 1.5px var(--green);
+    --soft-ic:radial-gradient(circle at 32% 26%, #ffffff, #ece9fc 78%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"Inter","Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--ink); letter-spacing:.1px;
+    display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:28px 16px;
+  }
+  .phone{
+    width:100%; max-width:420px; background:var(--bg);
+    border-radius:38px; overflow:hidden; box-shadow:0 30px 70px rgba(0,0,0,.18);
+    display:flex; flex-direction:column; height:790px;
+  }
+  .viewport{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .viewport::-webkit-scrollbar{width:0;}
+  .screen{display:none;} .screen.active{display:block;}
+
+  .top{ background:transparent; color:var(--ink); padding:24px 22px 6px; }
+  .brand{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--green-d); font-weight:700;}
+  .brand b{font-family:"Poppins",sans-serif; font-weight:700; font-size:16px; letter-spacing:-.2px; color:var(--green);}
+  .title{font-size:23px; font-weight:800; margin-top:12px; line-height:1.3; letter-spacing:-.3px;}
+  .subtitle{font-size:13px; color:var(--muted); margin-top:5px;}
+  .body{padding:16px 20px 26px;}
+
+  /* 공통 카드 (테두리 없이 떠 있는 흰 카드) */
+  .scoreCard,.goal,.tl,.cgm,.card-pad,.stat,.summary,.med,.prod,.scard{
+    background:var(--card); border:none; box-shadow:var(--sh);
+  }
+
+  /* ===== 홈: 그라데이션 대시보드 히어로 ===== */
+  #screen-home{background:#ffffff;}
+  .hhead{background:linear-gradient(170deg,#7b6ef2 0%,#a99bf5 72%,#cabff8 100%); padding:22px 20px 26px; border-radius:0 0 28px 28px; color:#fff;}
+  .days{display:flex; gap:4px;}
+  .day{flex:1; text-align:center; color:rgba(255,255,255,.62); padding:7px 0; border-radius:14px;}
+  .day.active{background:rgba(255,255,255,.22); color:#fff;}
+  .day .dw{font-size:11px; font-weight:600; display:block;}
+  .day .dn{font-size:16px; font-weight:800; display:block; margin-top:2px;}
+  .hseg{display:inline-flex; background:rgba(255,255,255,.18); border-radius:9999px; padding:4px; margin-top:18px;}
+  .hsegb{border:none; background:none; color:rgba(255,255,255,.72); font-family:inherit; font-size:13px; font-weight:700; padding:7px 20px; border-radius:9999px; cursor:pointer;}
+  .hsegb.active{background:#fff; color:#5a4ad0;}
+  .hnum{text-align:center; font-size:74px; font-weight:800; letter-spacing:-3px; line-height:1; margin-top:18px;}
+  .hunit{font-size:18px; font-weight:700; opacity:.85; margin-left:6px; letter-spacing:0;}
+  .hlabel{text-align:center; color:rgba(255,255,255,.82); font-size:12.5px; margin-top:9px;}
+  .hstats{display:flex; gap:10px; margin-top:22px;}
+  .hstat{flex:1; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.18); border-radius:16px; padding:13px 8px; text-align:center;}
+  .hstat .hl{font-size:11px; opacity:.82;}
+  .hstat .hv{font-size:17px; font-weight:800; margin-top:5px;}
+  .hdots{display:flex; gap:5px; justify-content:center; margin-top:16px;}
+  .hdots i{width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.4);}
+  .hdots i.on{width:16px; background:#fff;}
+  /* 측정 레벨 카드 */
+  .lvlcard{background:#fff; box-shadow:var(--sh); border-radius:18px; padding:16px;}
+  .lvl-top{display:flex; justify-content:space-between; align-items:flex-start;}
+  .lvl-t{font-size:14px; font-weight:800;} .lvl-sub{font-size:11px; color:var(--muted); margin-top:3px;}
+  .lvl-v{font-size:24px; font-weight:800;} .lvl-v small{font-size:12px; color:var(--muted); font-weight:600; margin-left:2px;}
+  .lvl-bar{height:8px; border-radius:5px; background:linear-gradient(90deg,#7fc99a,#f3c06a,#ee8a6e); margin-top:16px; position:relative;}
+  .lvl-bar .mk{position:absolute; top:-4px; width:5px; height:16px; border-radius:3px; background:#fff; box-shadow:0 0 0 2px #6053f3; transform:translateX(-50%);}
+  .lvl-scale{display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:6px;}
+  .lvl-foot{display:flex; justify-content:space-between; margin-top:12px; font-size:11px; color:var(--muted);}
+  .lvl-status{color:#ee8a6e; font-weight:700;}
+
+  /* (legacy 홈 hero — 미사용) */
+  .hero{background:transparent; color:var(--ink); border-radius:0; box-shadow:none; padding:12px 0 0;}
+  .hero-tabs{display:flex; align-items:center; gap:18px;}
+  .ht{background:none; border:none; font-family:inherit; font-size:17px; font-weight:700; color:#aba8bd; cursor:pointer; padding:0;}
+  .ht.active{color:var(--ink);}
+  .hchat{margin-left:auto; width:34px; height:34px; border-radius:12px; background:#ece8fb; display:flex; align-items:center; justify-content:center;}
+  .hdate{font-size:14px; font-weight:700; color:var(--ink); margin-top:18px; display:flex; align-items:center; gap:9px;}
+  .hdate .nav{color:#b3aecb; font-weight:600; letter-spacing:5px;}
+  .hmain{display:flex; align-items:flex-start; justify-content:space-between; margin-top:14px;}
+  .hcur{padding-top:4px;}
+  .htime{font-size:12.5px; color:#8b8ea0;}
+  .hval{font-size:50px; font-weight:800; line-height:1; margin-top:6px; letter-spacing:-2.5px; color:var(--ink); display:flex; align-items:center; gap:7px;}
+  .hval small{font-size:14px; font-weight:600; color:#8b8ea0; letter-spacing:0; align-self:flex-end; margin-bottom:7px; margin-left:-3px;}
+  .hval .harrow,.hval .hrefresh{display:inline-flex; align-self:center; margin-bottom:5px;}
+  .hsensor{font-size:12.5px; color:#8b8ea0; font-weight:600; margin-top:16px; display:flex; align-items:center; gap:6px;}
+  .scorehex{width:110px; height:122px; flex:none; clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); background:linear-gradient(145deg,#f3effd 0%,#cdbcf5 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; filter:drop-shadow(0 12px 20px rgba(120,95,210,.22));}
+  .scorehex .num{font-size:29px; font-weight:800; color:#2a2550; line-height:1;}
+  .scorehex .num small{font-size:13px; font-weight:700;}
+  .scorehex .lab{font-size:10.5px; color:#6a6790; font-weight:600; margin-top:4px;}
+  .herochart{margin-top:16px;} .herochart svg{width:100%; height:206px; display:block;}
+  .statsbar{display:flex; align-items:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--line);}
+  .statsbar .st{flex:1; padding-left:4px;}
+  .statsbar .sl{font-size:11px; color:#9a9bb0; font-weight:600; letter-spacing:.2px;}
+  .statsbar .sv{font-size:18px; font-weight:800; margin-top:5px; color:var(--ink);}
+  .statsbar .sv small{font-size:11px; font-weight:600; color:#9a9bb0; margin-left:1px;}
+  .statsbar .sv.low{color:#3a86d4;} .statsbar .sv.high{color:#ee5a6e;}
+  .statsbar .vdiv{width:1px; height:36px; background:var(--line);}
+  .rec-head2{display:flex; align-items:center; justify-content:space-between; margin:24px 4px 12px;}
+  .sec0{font-size:15px; font-weight:700; letter-spacing:-.3px;}
+  .aimode{font-size:11.5px; font-weight:700; color:var(--green-d); background:rgba(96,83,243,.1); border-radius:9999px; padding:6px 12px;}
+
+  /* ===== 홈: AI 코치 말풍선 ===== */
+  .aibubble{display:flex; gap:11px; align-items:flex-start; margin-bottom:6px;}
+  .aibubble .av{width:46px; height:46px; border-radius:50%; flex:none; background:radial-gradient(circle at 32% 26%, #fff, #d9d2ff 80%); display:flex; align-items:center; justify-content:center; font-size:23px; box-shadow:0 6px 14px rgba(96,83,243,.28);}
+  .bubble{flex:1; background:#fff; border-radius:20px 20px 20px 6px; padding:15px 16px; box-shadow:var(--sh); position:relative;}
+  .bubble .bh{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--green-d);}
+  .bubble .ev{font-size:11px; color:var(--warn); font-weight:800; background:var(--warn-l); border-radius:20px; padding:2px 9px; margin-left:auto;}
+  .bubble .bt{font-size:13px; line-height:1.62; margin-top:9px;}
+  .bubble .sci{display:inline-block; font-size:10.5px; font-weight:700; color:var(--sci); background:var(--sci-bg); border-radius:8px; padding:4px 9px; margin-top:11px;}
+  .bubble .bgo{display:block; margin-top:12px; font-size:12.5px; font-weight:600; letter-spacing:.24px; color:#fff; background:var(--green); border:none; border-radius:9999px; padding:12px; width:100%; cursor:pointer; font-family:inherit;}
+
+  /* 목표 미니 추이 */
+  .gtrend{margin-top:8px;} .gtrend svg{width:100%; height:30px; display:block;}
+
+  /* ===== 레시피 릴스 (콘텐츠 커머스) ===== */
+  .reels{display:flex; gap:12px; overflow-x:auto; padding:4px 2px 10px; margin:0 -2px;}
+  .reels::-webkit-scrollbar{height:5px;} .reels::-webkit-scrollbar-thumb{background:#d8d5f0; border-radius:4px;}
+  .reel{flex:0 0 162px; border-radius:20px; overflow:hidden; background:#fff; box-shadow:var(--sh); display:flex; flex-direction:column;}
+  .rthumb{position:relative; aspect-ratio:9/13; padding:12px; display:flex; flex-direction:column; color:#fff; overflow:hidden;}
+  .rthumb .remoji{position:absolute; top:46%; left:50%; transform:translate(-50%,-50%); font-size:50px; filter:drop-shadow(0 4px 8px rgba(0,0,0,.18));}
+  .rthumb .rplay{position:absolute; top:46%; left:50%; transform:translate(-50%,-50%); width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.32); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; font-size:14px; border:1.5px solid rgba(255,255,255,.7);}
+  .rdur{align-self:flex-end; font-size:10px; font-weight:700; background:rgba(0,0,0,.28); padding:3px 8px; border-radius:20px; z-index:1;}
+  .rben{margin-top:auto; font-size:10px; font-weight:800; background:rgba(255,255,255,.28); backdrop-filter:blur(4px); align-self:flex-start; padding:3px 9px; border-radius:20px; z-index:1;}
+  .rtitle{font-size:13px; font-weight:800; margin-top:7px; line-height:1.32; text-shadow:0 1px 5px rgba(0,0,0,.3); z-index:1;}
+  .rprod{display:flex; gap:9px; align-items:center; padding:9px 10px; text-decoration:none; color:var(--ink);}
+  .rprod img{width:40px; height:40px; border-radius:11px; object-fit:cover; flex:none;}
+  .rprod .rpn{font-size:11px; font-weight:800; line-height:1.3;}
+  .rprod .rpp{font-size:10px; color:var(--green-d); font-weight:700; margin-top:2px;}
+
+  /* ===== 홈: 혈당 점수 ===== */
+  .scoreCard{display:flex; gap:16px; align-items:center; border-radius:24px; padding:18px;}
+  .hex{width:108px; height:118px; position:relative; flex:none; filter:drop-shadow(0 8px 16px rgba(96,83,243,.28));}
+  .hex .outer,.hex .inner{position:absolute; clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);}
+  .hex .outer{inset:0; background:linear-gradient(150deg,var(--green),var(--grad-end));}
+  .hex .inner{inset:6px; background:radial-gradient(circle at 50% 30%, #ffffff, #f6f4ff); display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .hex .num{font-size:31px; font-weight:800; line-height:1;}
+  .hex .num small{font-size:13px; font-weight:700;}
+  .hex .lab{font-size:11px; color:var(--muted); margin-top:3px;}
+  .hex .warn{position:absolute; top:6px; right:12px; width:21px; height:21px; border-radius:50%; background:var(--warn); color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(240,145,58,.4);}
+  .scoreInfo .st{font-size:15px; font-weight:800;}
+  .scoreInfo .ds{font-size:12.5px; color:var(--muted); margin-top:5px; line-height:1.5;}
+  .scoreInfo .now{margin-top:9px; font-size:12px; color:var(--green-d); font-weight:700;}
+
+  /* ===== 홈: 트리거 카드 ===== */
+  .trigger{margin-top:14px; border:none; background:linear-gradient(135deg,#fff3e3,#fff9f2); border-radius:22px; padding:16px 17px; display:flex; align-items:center; gap:13px; cursor:pointer; transition:transform .14s, box-shadow .14s; box-shadow:0 8px 22px rgba(240,145,58,.16);}
+  .trigger:hover{transform:translateY(-2px); box-shadow:var(--sh-h);}
+  .trigger .ic{width:46px; height:46px; border-radius:50%; background:radial-gradient(circle at 32% 26%, #fff, #ffe2bf 80%); display:flex; align-items:center; justify-content:center; font-size:22px; flex:none; box-shadow:0 5px 12px rgba(240,145,58,.28);}
+  .trigger .tm{font-size:11px; color:var(--muted);}
+  .trigger .tx{font-size:14.5px; font-weight:800; margin-top:2px;}
+  .trigger .arr{margin-left:auto; color:var(--warn); font-weight:800; font-size:13px; white-space:nowrap;}
+
+  /* ===== 섹션/타임라인 ===== */
+  .sec{font-size:14px; font-weight:800; margin:22px 4px 11px; letter-spacing:-.2px;}
+  .tl{border-radius:22px; overflow:hidden; padding:4px 0;}
+  .tlrow{display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid var(--line);}
+  .tlrow:last-child{border-bottom:none;}
+  .tlrow .ic{width:40px; height:40px; border-radius:13px; background:var(--soft-ic); display:flex; align-items:center; justify-content:center; font-size:19px; flex:none; box-shadow:0 4px 10px rgba(96,83,243,.14);}
+  .tlrow .tm{font-size:11px; color:var(--muted);}
+  .tlrow .nm{font-size:13.5px; font-weight:700; margin-top:1px;}
+  .tlrow .meta{margin-left:auto; font-size:12px; color:var(--muted); font-weight:700;}
+
+  /* ===== 홈: 코칭 요약 ===== */
+  .summary{margin-top:12px; border-radius:22px; padding:17px; background:linear-gradient(160deg,#f1f0fd,#fbfaff);}
+  .summary .h{display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; color:var(--green-d);}
+  .summary .bd{font-size:13px; line-height:1.6; margin-top:8px; color:var(--ink);}
+  .summary .go{margin-top:10px; font-size:12.5px; font-weight:800; color:var(--green-d);}
+  .summary.empty{cursor:pointer;}
+
+  /* ===== 목표 진행 (홈 링) ===== */
+  .goal{margin-top:14px; border-radius:24px; padding:18px; display:flex; gap:16px; align-items:center;}
+  .goal .ring{width:86px; height:86px; flex:none; position:relative;}
+  .goal .ring .pct{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .goal .ring .pct b{font-size:21px; font-weight:800; line-height:1;}
+  .goal .ring .pct span{font-size:9px; color:var(--muted); margin-top:2px;}
+  .goal .gi{flex:1; min-width:0;}
+  .goal .gh{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .goal .gt{font-size:13.5px; font-weight:800;}
+  .goal .edit{font-size:11px; font-weight:700; color:#fff; background:var(--green); cursor:pointer; border:none; border-radius:14px; padding:5px 11px; font-family:inherit; white-space:nowrap;}
+  .goal .gm{font-size:11.5px; color:var(--muted); margin-top:7px; line-height:1.5;}
+  .goal .gd{font-size:11.5px; font-weight:800; color:var(--green-d); margin-top:8px;}
+  .goal-proj{font-size:12px; font-weight:700; color:var(--green-d); margin-top:12px; text-align:center; background:var(--green-l); border-radius:14px; padding:11px;}
+
+  /* ===== 홈 섹션 카드 (24px 간격) ===== */
+  .hero{margin-bottom:24px;}
+  .hsec{background:#fff; box-shadow:var(--sh); border-radius:20px; padding:16px; margin-bottom:24px;}
+  .hsec:last-child{margin-bottom:8px;}
+  .hsec-t{font-size:14px; font-weight:800; margin-bottom:12px; letter-spacing:-.2px;}
+  .hsec-h{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:14px; font-weight:800;}
+  /* 섹션 카드 안의 내부 카드 chrome 제거 (이중 카드 방지) */
+  .hsec .tl{box-shadow:none; border:none; border-radius:0; padding:0;}
+  .hsec .tlrow{padding:11px 0;}
+  .hsec .aibubble{gap:0;}
+  .hsec .aibubble .bubble{box-shadow:none; border-radius:0; padding:0;}
+  .hsec .act{box-shadow:none; background:#f7f7fb;}
+  .hsec .goal{box-shadow:none; border-radius:0; padding:0;}
+
+  /* ===== 오늘의 액션 (실행 추적) ===== */
+  .act-prog{display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:10px;}
+  .act-pct{color:var(--green-d);}
+  .act{display:flex; align-items:center; gap:11px; background:#fff; box-shadow:var(--sh); border-radius:14px; padding:13px 14px; margin-bottom:9px; cursor:pointer;}
+  .act-ck{width:22px; height:22px; border-radius:50%; border:2px solid var(--line); flex:none; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; font-weight:800;}
+  .act.done .act-ck{background:var(--green); border-color:var(--green);}
+  .act-t{font-size:13px; font-weight:600;}
+  .act.done .act-t{color:var(--muted); text-decoration:line-through;}
+
+  /* ===== 같은 메뉴 Before/After ===== */
+  .cmp{background:linear-gradient(160deg,#f1f0fd,#fbfaff); border-radius:16px; padding:15px; margin-top:14px; box-shadow:var(--sh);}
+  .cmp-h{font-size:13px; font-weight:800; color:var(--green-d);}
+  .cmp-row{display:flex; align-items:center; gap:12px; margin-top:13px;}
+  .cmp-b{text-align:center;}
+  .cmp-b .cl{font-size:11px; color:var(--muted);}
+  .cmp-b .cv{font-size:23px; font-weight:800; color:var(--muted); margin-top:2px;}
+  .cmp-b.ok .cv{color:#2fa15f;}
+  .cmp-arrow{color:#c4c5d2; font-weight:800; font-size:16px;}
+  .cmp-delta{margin-left:auto; font-size:13px; font-weight:800; color:#2fa15f; background:#e2f3e8; border-radius:9999px; padding:7px 13px;}
+  .cmp-note{font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.5;}
+
+  /* ===== 나만의 혈당 음식 사전 ===== */
+  .fd-search{width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 14px; font-size:13px; font-family:inherit; margin-bottom:14px; background:#fff;}
+  .fd-search:focus{outline:none; border-color:var(--green);}
+  .fd{margin-bottom:13px;}
+  .fd-top{display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:6px;}
+  .fd-meta{font-size:12px; color:var(--muted); font-weight:600;}
+  .fd-imp{font-weight:800;} .fd-imp.hi{color:#ee5a6e;} .fd-imp.mid{color:#e0902b;} .fd-imp.ok{color:#2fa15f;}
+  .fd-bar{height:8px; border-radius:5px; background:#f1f0f8; overflow:hidden;}
+  .fd-bar>i{display:block; height:100%; border-radius:5px;}
+  .fd-bar>i.hi{background:linear-gradient(90deg,#f3b0a0,#ee5a6e);}
+  .fd-bar>i.mid{background:linear-gradient(90deg,#f3c48a,#e0902b);}
+  .fd-bar>i.ok{background:linear-gradient(90deg,#a7e0bb,#2fa15f);}
+  .fd-empty{font-size:12.5px; color:var(--muted); padding:8px 2px;}
+
+  /* ===== CGM 카드 ===== */
+  .cgm{border-radius:24px; background:linear-gradient(165deg,#f3f2ff,#ffffff); padding:17px 16px 13px;}
+  .cgm .hd{display:flex; align-items:center; justify-content:space-between;}
+  .cgm .dev{display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:var(--green-d);}
+  .live{width:7px; height:7px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 0 rgba(34,197,94,.5); animation:live 1.6s infinite;}
+  @keyframes live{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  .cgm .time{font-size:11px; color:var(--muted);}
+  .vals{display:flex; gap:10px; margin-top:13px;}
+  .val{flex:1; background:#fff; border:none; box-shadow:var(--sh-sm); border-radius:16px; padding:11px 13px;}
+  .val .k{font-size:11px; color:var(--muted);}
+  .val .v{font-size:22px; font-weight:800; margin-top:1px;}
+  .val .v small{font-size:11px; font-weight:600; color:var(--muted);}
+  .val.hi .v{color:var(--warn);}
+  .curve{margin-top:12px;} .curve svg{width:100%; height:64px; display:block;}
+  .reload{width:100%; margin-top:12px; background:#fff; border:none; box-shadow:var(--sh-sm); border-radius:16px; padding:11px; font-size:12.5px; font-weight:700; color:var(--green-d); cursor:pointer; font-family:inherit;}
+  .reload:hover{background:var(--green-l);}
+  .label{font-size:13px; font-weight:700; margin:18px 4px 8px; display:flex; gap:6px; align-items:center;}
+  .label .opt{font-weight:500; color:var(--muted); font-size:11px;}
+  input,textarea{width:100%; border:1px solid var(--line); border-radius:12px; padding:14px 15px; font-size:14px; font-family:inherit; color:var(--ink); background:#fff; transition:border-color .15s, box-shadow .15s;}
+  input:focus,textarea:focus{outline:none; border-color:var(--green); box-shadow:0 0 0 3px rgba(96,83,243,.12);}
+  textarea{resize:none; height:64px;}
+  .btn{width:100%; margin-top:20px; background:var(--green); color:#fff; border:none; border-radius:9999px; padding:16px; font-size:15px; font-weight:600; letter-spacing:.24px; cursor:pointer; font-family:inherit; transition:background .12s;}
+  .btn:hover{background:var(--green-d);}
+
+  .pipe{margin-top:24px; display:none;} .pipe.show{display:block;}
+  .pipe h4{font-size:12px; color:var(--muted); font-weight:700; margin-bottom:11px;}
+  .step{display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:16px; background:#fff; box-shadow:var(--sh-sm); margin-bottom:8px; font-size:13px; color:var(--muted); opacity:.5; transition:all .3s;}
+  .step.active{opacity:1; background:var(--green-l); color:var(--green-d); font-weight:700;}
+  .step.done{opacity:1; color:var(--ink);}
+  .dot{width:18px; height:18px; border-radius:50%; border:2px solid #d3d2e6; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px;}
+  .step.active .dot{border-color:var(--green); animation:pulse 1s infinite;}
+  .step.done .dot{background:var(--green); border-color:var(--green); color:#fff;}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+
+  .result{margin-top:22px; display:none;} .result.show{display:block; animation:fade .4s;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+  .coach-card{background:linear-gradient(160deg,#f1f0fd,#fbfaff); border-radius:22px; padding:18px; font-size:14px; line-height:1.65; box-shadow:var(--sh);}
+  .coach-card .who{display:flex; align-items:center; gap:7px; font-weight:800; font-size:13px; color:var(--green-d); margin-bottom:9px;}
+  .badges{display:flex; gap:6px; margin-top:13px; flex-wrap:wrap;}
+  .badge{font-size:11px; padding:5px 10px; border-radius:20px; background:#fff; color:var(--muted); font-weight:700; box-shadow:var(--sh-sm);}
+  .badge.risk{background:var(--warn-l); color:var(--warn);}
+
+  .med{margin-top:14px; border-radius:22px; padding:17px; background:linear-gradient(160deg,var(--sci-bg),#fff);}
+  .med .who{display:flex; gap:11px; align-items:center;}
+  .med .av{width:42px; height:42px; border-radius:50%; background:radial-gradient(circle at 32% 26%, #fff, #d9e6fc 80%); display:flex; align-items:center; justify-content:center; font-size:20px; flex:none; box-shadow:0 4px 11px rgba(63,111,209,.22);}
+  .med .nm{font-weight:800; font-size:13.5px; display:flex; align-items:center; gap:6px;}
+  .med .aibadge{font-size:9px; color:#fff; background:var(--sci); border-radius:6px; padding:1px 6px; font-weight:800; letter-spacing:.5px;}
+  .med .role{font-size:11px; color:var(--muted); margin-top:1px;}
+  .med .mtag{font-size:11.5px; font-weight:800; color:var(--sci); margin-top:13px;}
+  .med .mbody{font-size:13px; line-height:1.62; margin-top:6px;}
+  .med .mfoot{font-size:10.5px; color:var(--muted); margin-top:12px; line-height:1.5; border-top:1px solid var(--sci-line); padding-top:10px;}
+
+  .reco-h{display:flex; align-items:center; justify-content:space-between; margin:20px 4px 11px; font-size:14px; font-weight:800;}
+  .reco-h small{font-weight:600; color:var(--muted); font-size:11px;}
+  .reco-scroll{display:flex; gap:12px; overflow-x:auto; padding:4px 2px 10px; margin:0 -2px; scroll-snap-type:x mandatory; cursor:grab;}
+  .reco-scroll.drag{cursor:grabbing;}
+  .reco-scroll::-webkit-scrollbar{height:5px;} .reco-scroll::-webkit-scrollbar-thumb{background:#d8d5f0; border-radius:4px;}
+  .prod{flex:0 0 156px; scroll-snap-align:start; text-decoration:none; color:var(--ink); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s, transform .15s;}
+  .prod:hover{box-shadow:var(--sh-h); transform:translateY(-3px);}
+  .prod .thumb{width:100%; aspect-ratio:1/1; background:#f4f4fb; position:relative;}
+  .prod .thumb img{width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;}
+  .prod .tag{position:absolute; top:9px; left:9px; font-size:10px; color:#fff; background:rgba(96,83,243,.95); border-radius:20px; padding:3px 9px; font-weight:700;}
+  .prod .info{padding:11px 12px 13px; display:flex; flex-direction:column; flex:1;}
+  .prod .nm{font-weight:800; font-size:12.5px; line-height:1.35; min-height:33px;}
+  .prod .why{font-size:11px; color:var(--green-d); font-weight:700; margin-top:5px; line-height:1.4;}
+  .prod .fn{font-size:10.5px; color:var(--muted); margin-top:5px; line-height:1.45; flex:1;}
+  .prod .pr{font-size:13px; font-weight:800; margin-top:8px;}
+  .prod .go{font-size:10.5px; color:var(--green-d); font-weight:700; margin-top:3px;}
+  .disc{font-size:11px; color:var(--muted); line-height:1.55; margin-top:16px; padding:13px 14px; background:#f6f5fc; border-radius:16px;}
+  .reset{width:100%; margin-top:14px; background:#fff; color:var(--muted); border:none; box-shadow:var(--sh-sm); border-radius:24px; padding:14px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;}
+  .demo-note{text-align:center; font-size:11px; color:var(--muted); margin-top:16px;}
+
+  /* ===== 기록 ===== */
+  .rec-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:13px;}
+  .datechip{font-size:12.5px; font-weight:700; color:var(--green-d); background:var(--green-l); padding:8px 14px; border-radius:20px;}
+  .addbtn{font-size:12.5px; font-weight:600; color:#fff; background:var(--green); border:none; border-radius:9999px; padding:9px 16px; font-family:inherit; cursor:pointer;}
+  .tlrow .detail{font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.4;}
+  .tlrow .meta.warn{color:var(--warn);}
+  .tlrow .meta.ok{color:#22a06b;}
+
+  /* ===== 기록: 복약 내역 (Pilly 스타일 · 무채색) ===== */
+  .navbar{display:flex; align-items:center; gap:6px; padding:16px 14px 12px; background:#fff;}
+  .nav-ic{width:34px; height:34px; border:none; background:none; cursor:pointer; font-size:26px; color:var(--ink); display:flex; align-items:center; justify-content:center; font-family:inherit;}
+  .nav-title{flex:1; text-align:center; font-size:16px; font-weight:700;}
+  .seg{display:flex; background:#f0f0f3; border-radius:9999px; padding:4px; margin-bottom:6px;}
+  .segbtn{flex:1; border:none; background:none; font-family:inherit; font-size:14px; font-weight:700; color:#a6a8b0; padding:11px; border-radius:9999px; cursor:pointer; transition:all .15s;}
+  .segbtn.active{background:#fff; color:var(--ink); box-shadow:0 2px 7px rgba(0,0,0,.1);}
+  .daterange{font-size:13px; color:#a2a6ac; font-weight:500; text-align:center; padding:16px 0; margin-bottom:8px; border-bottom:1px solid #f0f0f2; display:flex; justify-content:center; gap:10px;}
+  .daterange span{color:#cfcfd4;}
+  .medgroup{display:flex; gap:6px; margin-bottom:18px; align-items:flex-start;}
+  .medday{width:66px; flex:none; padding:16px 0 0 6px;}
+  .medday .dn{font-size:28px; font-weight:800; letter-spacing:-1px;}
+  .medday .dw{font-size:12px; color:#a2a6ac; font-weight:600; vertical-align:super; margin-left:2px;}
+  .medcard{flex:1; background:#fff; border:1px solid #f1f1f3; border-radius:22px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.05);}
+  .meditem{display:flex; align-items:center; gap:10px; padding:16px 16px; border-bottom:1px solid #f4f4f6;}
+  .meditem:last-child{border-bottom:none;}
+  .mi-info{flex:1; min-width:0; line-height:1.5;}
+  .mi-src{font-size:13.5px; color:#62656b; font-weight:500;}
+  .mi-nm{font-size:13.5px; color:#3a3d40; font-weight:600;}
+  .mi-t{width:30px; height:30px; flex:none; display:flex; align-items:center; justify-content:center;}
+
+  /* ===== 리포트 ===== */
+  .stat-row{display:flex; gap:10px;}
+  .stat{flex:1; border-radius:18px; padding:15px 8px; text-align:center;}
+  .stat .sv{font-size:20px; font-weight:800;} .stat .sk{font-size:10.5px; color:var(--muted); margin-top:4px;}
+  .card-pad{border-radius:22px; padding:17px;}
+  .barchart{display:flex; align-items:flex-end; gap:8px; height:132px;}
+  .bar{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end;}
+  .bar .col{width:66%; border-radius:8px 8px 4px 4px; background:linear-gradient(180deg,var(--green),var(--grad-end)); transition:height .4s;}
+  .bar .col.low{background:linear-gradient(180deg,#f3b066,#f0913a);}
+  .bar .bv{font-size:10px; font-weight:800; color:var(--ink);} .bar .bd{font-size:10px; color:var(--muted);}
+  .rank{margin-bottom:13px;}
+  .rank .rt{display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; margin-bottom:6px;}
+  .rank .rt .imp{font-weight:800;} .rank .rt .imp.hi{color:var(--warn);} .rank .rt .imp.mid{color:var(--green-d);}
+  .rank .rbar{height:9px; border-radius:6px; background:#f1f0f8; overflow:hidden;}
+  .rank .rbar > i{display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--green),var(--grad-end));}
+  .rank .rbar > i.hi{background:linear-gradient(90deg,#f3b066,#f0913a);}
+  .rank-go{font-size:12.5px; font-weight:800; color:var(--green-d); margin-top:9px; cursor:pointer;}
+  /* 히트맵 */
+  .heatgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .hmwd{font-size:10px; color:#9a9bb0; text-align:center; font-weight:600; padding-bottom:2px;}
+  .hmcell{aspect-ratio:1; border-radius:7px; background:#eeeef4;}
+  .hmcell.empty{background:transparent;}
+  .heatlegend{display:flex; align-items:center; gap:4px; justify-content:flex-end; margin-top:13px; font-size:10px; color:#9a9bb0;}
+  .heatlegend i{width:13px; height:13px; border-radius:4px; display:inline-block;}
+  /* 음식 랭킹 안내 */
+  .ranknote{font-size:11.5px; color:var(--muted); line-height:1.5; margin-bottom:13px; background:#f6f5fc; border-radius:10px; padding:10px 12px;}
+  /* 리포트: 게이지 히어로 + Key findings */
+  .bcard{background:#fff; box-shadow:var(--sh); border-radius:18px; overflow:hidden;}
+  .bhead{background:linear-gradient(180deg,#dcf2e6,#f1fbf6); padding:15px 16px; display:flex; justify-content:space-between; align-items:center; font-size:15px; font-weight:800;}
+  .binfo{color:#9aa0a6; font-size:14px;}
+  .bmsg{font-size:13px; line-height:1.55; color:var(--ink); padding:14px 16px 2px;}
+  .bmsg b{color:#2fa15f;}
+  .gauge{padding:4px 14px 14px;}
+  .findings{margin-top:2px;}
+  .finding{display:flex; gap:12px; padding:15px 2px; border-bottom:1px solid var(--line);}
+  .finding:last-child{border-bottom:none;}
+  .ficon{width:42px; height:42px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; font-size:20px;}
+  .finfo{flex:1; min-width:0;}
+  .frow{display:flex; justify-content:space-between; align-items:center;}
+  .ft{font-size:14px; font-weight:800;}
+  .chev{color:#c4c5d2; font-size:17px;}
+  .fbadge{display:inline-block; margin-top:7px; font-size:10px; font-weight:800; letter-spacing:.3px; padding:3px 9px; border-radius:6px;}
+  .fbadge.warn{background:#fde7d6; color:#d9822b;}
+  .fbadge.mid{background:#fff3d4; color:#b08400;}
+  .fbadge.ok{background:#e2f3e8; color:#2fa15f;}
+  .fdesc{font-size:12.5px; color:var(--muted); line-height:1.6; margin-top:9px;}
+  .insight{margin-top:16px; font-size:12.5px; line-height:1.6; background:var(--green-l); border-radius:18px; padding:16px;}
+
+  /* ===== 스토어 ===== */
+  .cats{display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:4px;}
+  .cats::-webkit-scrollbar{height:0;}
+  .cat{font-size:12.5px; font-weight:700; white-space:nowrap; border:none; background:#fff; color:var(--muted); padding:9px 16px; border-radius:20px; cursor:pointer; box-shadow:var(--sh-sm);}
+  .cat.active{background:var(--green); color:#fff; box-shadow:none;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .scard{text-decoration:none; color:var(--ink); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s, transform .15s;}
+  .scard:hover{box-shadow:var(--sh-h); transform:translateY(-3px);}
+  .scard .th{aspect-ratio:1/1; position:relative; background:#f4f4fb;}
+  .scard .th img{width:100%; height:100%; object-fit:cover; display:block;}
+  .scard .tag{position:absolute; top:9px; left:9px; font-size:9.5px; color:#fff; background:rgba(96,83,243,.95); border-radius:20px; padding:3px 9px; font-weight:700;}
+  .scard .aib{position:absolute; top:9px; right:9px; font-size:9px; color:#fff; background:var(--sci); border-radius:20px; padding:3px 8px; font-weight:800;}
+  .scard .si2{padding:11px 12px 13px;}
+  .scard .nm{font-size:12px; font-weight:800; line-height:1.35; min-height:32px;}
+  .scard .pr{font-size:13px; font-weight:800; margin-top:6px;}
+
+  /* ===== 웰니스: 인스타 프로필 바 ===== */
+  .igprofile{display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--ink); background:#fff; box-shadow:var(--sh); border-radius:18px; padding:12px 14px; margin-bottom:14px;}
+  .igav{width:46px; height:46px; border-radius:50%; flex:none; background:linear-gradient(135deg,#f58529,#dd2a7b 45%,#8134af 70%,#6053f3); color:#fff; font-family:"Poppins",sans-serif; font-weight:800; font-size:22px; display:flex; align-items:center; justify-content:center;}
+  .iginfo{flex:1; min-width:0;}
+  .ign{font-size:14px; font-weight:800;}
+  .igsub{font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .igbtn{flex:none; font-size:12.5px; font-weight:700; color:#fff; background:var(--green); border-radius:9999px; padding:8px 16px;}
+  .igmore{display:block; text-align:center; text-decoration:none; font-size:13px; font-weight:700; color:var(--green-d); background:var(--green-l); border-radius:9999px; padding:13px; margin-top:6px;}
+  .ig-note{font-size:12px; color:var(--muted); font-weight:600; margin:2px 2px 12px;}
+
+  /* ===== 웰니스: 커스텀 콘텐츠 카드 (크롬 없음) ===== */
+  .igc{background:#fff; border-radius:18px; overflow:hidden; box-shadow:var(--sh); margin-bottom:14px;}
+  .igc-cover{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; aspect-ratio:4/5; padding:16px; text-decoration:none; color:#fff; overflow:hidden;}
+  .igc-cover img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .igc-type{position:absolute; top:12px; left:12px; z-index:2; font-size:10.5px; font-weight:700; background:rgba(255,255,255,.28); backdrop-filter:blur(4px); padding:3px 10px; border-radius:9999px;}
+  .igc-emoji{position:absolute; top:42%; left:50%; transform:translate(-50%,-50%); font-size:54px; opacity:.92;}
+  .igc-play{position:absolute; top:42%; left:50%; transform:translate(-50%,-50%); width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,.32); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; font-size:16px; border:1.5px solid rgba(255,255,255,.75); z-index:2;}
+  .igc-title{position:relative; z-index:2; font-size:16px; font-weight:800; text-align:center; line-height:1.35; text-shadow:0 1px 6px rgba(0,0,0,.3);}
+  .igc-body{padding:14px 16px 16px;}
+  .igc-cap{font-size:13px; line-height:1.62; color:var(--ink); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+  .igc-cap.open{-webkit-line-clamp:unset;}
+  .igc-more{display:inline-block; margin-top:7px; font-size:12px; font-weight:700; color:var(--muted); cursor:pointer;}
+  .igc-link{display:block; margin-top:12px; font-size:12.5px; font-weight:700; color:var(--green-d); text-decoration:none;}
+
+  /* ===== 웰니스 컨텐츠 피드 ===== */
+  .wcard{display:block; text-decoration:none; color:var(--ink); background:#fff; border-radius:20px; overflow:hidden; box-shadow:var(--sh); margin-bottom:14px; transition:box-shadow .15s, transform .15s;}
+  .wcard:hover{box-shadow:var(--sh-h); transform:translateY(-2px);}
+  .wcard .wimg{position:relative; aspect-ratio:16/10; display:flex; align-items:center; justify-content:center;}
+  .wcard .wemoji{font-size:54px; filter:drop-shadow(0 6px 10px rgba(0,0,0,.16));}
+  .wcard .wcat{position:absolute; top:11px; left:11px; font-size:10.5px; font-weight:700; color:#fff; background:rgba(255,255,255,.28); backdrop-filter:blur(4px); padding:4px 11px; border-radius:9999px;}
+  .wcard .wlike{position:absolute; top:10px; right:10px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; font-size:14px;}
+  .wcard .winfo{padding:14px 16px 16px;}
+  .wcard .wt{font-size:14.5px; font-weight:800; line-height:1.35;}
+  .wcard .wd{font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5;}
+  .wcard .wmeta{display:flex; gap:14px; margin-top:11px; font-size:11px; color:#9a9bb0; font-weight:600;}
+
+  /* ===== 하단 탭바 ===== */
+  .tabbar{display:flex; background:#fff; border-top:1px solid var(--line); padding:6px 4px 8px;}
+  .tab{flex:1; border:none; background:none; padding:8px 0 6px; font-family:inherit; cursor:pointer; color:#b7b8ce; display:flex; flex-direction:column; align-items:center; gap:4px;}
+  .tab .ti{font-size:19px; line-height:1;}
+  .tab .tl{font-size:10.5px; font-weight:700;}
+  .tab.active{color:var(--green);}
+  .tab.center .ti{width:48px; height:48px; margin-top:-18px; border-radius:50%; background:var(--green); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 16px rgba(96,83,243,.4); font-size:21px;}
+  .tab.center.active .ti{filter:brightness(1.06);}
+</style>
+</head>
+<body>
+  <div class="phone">
+    <div class="viewport" id="viewport">
+
+      <!-- ===================== 홈 ===================== -->
+      <section class="screen active" id="screen-home">
+        <div class="body">
+          <!-- 히어로: 실시간 혈당 -->
+          <div class="hero">
+            <div class="hero-tabs"><button class="ht active">혈당</button><button class="ht">여정</button>
+              <span class="hchat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a42d1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></svg></span></div>
+            <div class="hdate">9월 18일(오늘) <span class="nav">‹ ›</span></div>
+            <div class="hmain">
+              <div class="hcur">
+                <div class="htime">오전 18:35</div>
+                <div class="hval">96 <small>mg/dL</small>
+                  <span class="harrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b4ae0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l8 9"/><path d="M16 9v7h-7"/></svg></span>
+                  <span class="hrefresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b0b3bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 4 21 9 16 9"/></svg></span>
+                </div>
+                <div class="hsensor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6053f3" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#6053f3" stroke="none"/></svg> 센서 연동 모드</div>
+              </div>
+              <div class="scorehex">
+                <div class="num">50<small>점</small></div>
+                <div class="lab">혈당 점수</div>
+              </div>
+            </div>
+            <div class="herochart" id="heroChart"></div>
+            <div class="statsbar">
+              <div class="st"><div class="sl">혈당 점수</div><div class="sv">50<small>점</small></div></div>
+              <div class="vdiv"></div>
+              <div class="st"><div class="sl">최저 혈당</div><div class="sv low">83<small>mg/dL</small></div></div>
+              <div class="vdiv"></div>
+              <div class="st"><div class="sl">최고 혈당</div><div class="sv high">126<small>mg/dL</small></div></div>
+            </div>
+          </div>
+
+          <!-- 오늘의 기록 -->
+          <div class="hsec">
+            <div class="hsec-h"><span>오늘의 기록</span><span class="aimode">⚡ AI 모드 활성도 50%</span></div>
+            <div class="tl">
+              <div class="tlrow"><div class="ic">🏋️</div><div><div class="tm">오후 12:05</div><div class="nm">웨이트 운동</div></div><div class="meta">30분</div></div>
+              <div class="tlrow"><div class="ic">⏰</div><div><div class="tm">오후 12:00</div><div class="nm">간헐적 단식 종료</div></div><div class="meta">12시간</div></div>
+              <div class="tlrow"><div class="ic">🍽️</div><div><div class="tm">오후 1:40</div><div class="nm">점심 식사 기록</div></div><div class="meta">완료</div></div>
+            </div>
+          </div>
+
+          <!-- 웰다 AI 코치 (말풍선 + 코칭 통합) -->
+          <div class="hsec">
+            <div class="hsec-t">🤖 웰다 AI 코치</div>
+            <div id="aiBubble"></div>
+          </div>
+
+          <!-- 오늘의 액션 (실행 추적) -->
+          <div class="hsec">
+            <div class="hsec-t">✅ 오늘의 액션</div>
+            <div class="actions" id="actions"></div>
+          </div>
+
+          <!-- 다이어트 목표 -->
+          <div class="hsec">
+            <div class="hsec-t">🎯 내 다이어트 목표</div>
+            <div class="goal" id="goalCard"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== AI 코치 ===================== -->
+      <section class="screen" id="screen-coach">
+        <div class="top">
+          <div class="brand">🤖 <b>welda</b> · AI 혈당코치</div>
+          <div class="title">오늘 내 혈당, 어땠을까요?</div>
+          <div class="subtitle">CGM 센서가 측정한 혈당을 AI 코치가 분석해 드려요</div>
+        </div>
+        <div class="body">
+          <div id="form">
+            <div class="cgm">
+              <div class="hd">
+                <div class="dev"><span class="live"></span> 웰다 CGM 센서 · 연결됨</div>
+                <div class="time" id="cgmTime">오늘 13:24 측정</div>
+              </div>
+              <div class="vals">
+                <div class="val" id="vF"><div class="k">공복혈당</div><div class="v"><span id="fVal">--</span> <small>mg/dL</small></div></div>
+                <div class="val" id="vP"><div class="k">식후 2시간</div><div class="v"><span id="pVal">--</span> <small>mg/dL</small></div></div>
+              </div>
+              <div class="curve" id="curve"></div>
+              <button class="reload" id="reload">🔄 다른 측정 데이터 불러오기 (데모)</button>
+            </div>
+            <div class="label">무엇을 드셨나요? <span class="opt">사용자 기록</span></div>
+            <textarea id="meal" placeholder="예: 김밥 한 줄, 라면"></textarea>
+            <div class="label">나의 목표 <span class="opt">선택</span></div>
+            <input id="goal" type="text" placeholder="예: 혈당 안정화 / 다이어트" />
+            <button class="btn" id="go">AI 코칭 받기</button>
+          </div>
+
+          <div class="pipe" id="pipe">
+            <h4>5개의 AI 에이전트가 협업 중…</h4>
+            <div class="step"><span class="dot">1</span> Analyst · 혈당 데이터 분석</div>
+            <div class="step"><span class="dot">2</span> Coach · 개인화 코칭 작성</div>
+            <div class="step"><span class="dot">3</span> Medical Reviewer · 근거 기반 의학 자문</div>
+            <div class="step"><span class="dot">4</span> Recommender · 대웅 제품 추천</div>
+            <div class="step"><span class="dot">5</span> Critic · 안전성·표시광고 검수</div>
+          </div>
+
+          <div class="result" id="result">
+            <div class="coach-card">
+              <div class="who">💬 AI 혈당코치</div>
+              <div id="coachMsg"></div>
+              <div class="badges" id="badges"></div>
+            </div>
+            <div id="cmpWrap"></div>
+            <div id="medWrap"></div>
+            <div id="prodWrap"></div>
+            <div class="disc">ℹ️ 건강기능식품은 의약품이 아니며 질병의 예방·치료 목적이 아닙니다. 본 코칭은 참고용이며 의료진 상담을 대체하지 않습니다. (데모 · 가상 데이터)</div>
+            <button class="reset" id="reset">다시 측정하기</button>
+          </div>
+          <div class="demo-note">실제 서비스는 웰다 CGM 기기에서 혈당이 실시간 수신됩니다</div>
+        </div>
+      </section>
+
+      <!-- ===================== 기록 ===================== -->
+      <section class="screen" id="screen-record">
+        <div class="navbar">
+          <button class="nav-ic" aria-label="back">‹</button>
+          <div class="nav-title">기록</div>
+          <button class="nav-ic" aria-label="filter"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#191c1f" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="15" cy="8" r="2.4" fill="#fff"/><circle cx="9" cy="16" r="2.4" fill="#fff"/></svg></button>
+        </div>
+        <div class="body">
+          <div class="seg" id="recSeg">
+            <button class="segbtn active" data-seg="report">리포트</button>
+            <button class="segbtn" data-seg="meal">식사기록</button>
+          </div>
+
+          <!-- 식사기록 -->
+          <div id="recMeal" style="display:none">
+            <div class="daterange">Select from date <span>→</span> Select end date</div>
+            <div id="mealList"></div>
+          </div>
+
+          <!-- 리포트 -->
+          <div id="recReport">
+            <div class="bcard">
+              <div class="bhead"><span>혈당 건강 점수</span><span class="binfo">ⓘ</span></div>
+              <div class="bmsg">좋아요 — 이번 달 평균이 지난달보다 <b>8점 올랐어요.</b></div>
+              <div class="gauge" id="gauge"></div>
+            </div>
+            <div class="sec">주요 발견</div>
+            <div class="findings" id="findings"></div>
+            <div class="sec">🎯 목표 진행 상황</div>
+            <div class="card-pad" id="goalChart"></div>
+            <div class="sec">이번 달 혈당 점수 히트맵</div>
+            <div class="card-pad"><div id="heatmap"></div></div>
+            <div class="sec">음식별 혈당 영향 랭킹</div>
+            <div class="card-pad">
+              <div class="ranknote">📋 최근 <b>식사기록</b>을 분석해, 식후 혈당을 많이 올린 메뉴 순으로 정리했어요.</div>
+              <div id="foodRank"></div>
+              <div class="rank-go" data-go="coach">스파이크 큰 음식, AI 코치로 대안 받기 ›</div>
+            </div>
+            <div class="insight">💡 이번 주는 <b>정제 탄수화물(면·밥류)</b> 식사에서 식후 스파이크가 집중됐어요. 채소·단백질을 먼저 먹는 순서만 바꿔도 평균 점수가 오를 수 있어요.</div>
+
+            <div class="sec">📖 나만의 혈당 음식 사전</div>
+            <div class="ranknote">기록이 쌓일수록 <b>나에게</b> 혈당을 많이 올리는 음식을 더 정확히 알려드려요.</div>
+            <input class="fd-search" id="fdSearch" placeholder="음식 검색 (예: 김밥)" />
+            <div id="fooddict"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== 웰니스 컨텐츠 (피드) ===================== -->
+      <section class="screen" id="screen-report">
+        <div class="top"><div class="brand">📖 <b>welda</b> · 웰니스 컨텐츠</div>
+          <div class="title">오늘의 웰니스 피드</div>
+          <div class="subtitle">혈당·다이어트·건강 콘텐츠를 모았어요</div>
+        </div>
+        <div class="body">
+          <a class="igprofile" href="https://www.instagram.com/welda_official/" target="_blank" rel="noopener">
+            <div class="igav">w</div>
+            <div class="iginfo"><div class="ign">welda_official</div><div class="igsub">대사 건강 · CGM 혈당 다이어트 @welda_official</div></div>
+            <div class="igbtn">방문</div>
+          </a>
+          <div class="ig-note">📷 공식 인스타그램 <b>@welda_official</b> 최신 게시물</div>
+          <div id="wfeed"></div>
+          <a class="igmore" href="https://www.instagram.com/welda_official/" target="_blank" rel="noopener">📷 공식 인스타그램에서 더 보기</a>
+        </div>
+      </section>
+
+      <!-- ===================== 스토어 ===================== -->
+      <section class="screen" id="screen-store">
+        <div class="top"><div class="brand">🛒 <b>welda</b> · 스토어</div>
+          <div class="title">대웅 헬스케어</div>
+          <div class="subtitle">내 혈당 데이터에 맞춘 맞춤 큐레이션</div>
+        </div>
+        <div class="body">
+          <div class="cats" id="cats"></div>
+          <div class="reco-h"><span>🎬 혈당 맞춤 레시피</span><small>보고 바로 담기</small></div>
+          <div class="reels" id="reels"></div>
+          <div class="sec">🤖 AI 맞춤 추천</div>
+          <div class="grid" id="storeReco"></div>
+          <div class="sec">전체 상품</div>
+          <div class="grid" id="storeAll"></div>
+          <div class="demo-note">상품 정보·이미지는 대웅 헬스케어몰(dwhcmall.com) 공개 데이터 · 지원용 데모</div>
+        </div>
+      </section>
+
+    </div><!-- /viewport -->
+
+    <!-- ===================== 하단 탭바 ===================== -->
+    <nav class="tabbar" id="tabbar">
+      <button class="tab active" data-target="home"><span class="ti">🏠</span><span class="tl">홈</span></button>
+      <button class="tab" data-target="record"><span class="ti">📝</span><span class="tl">기록</span></button>
+      <button class="tab center" data-target="coach"><span class="ti">🤖</span><span class="tl">AI 코치</span></button>
+      <button class="tab" data-target="report"><span class="ti">📖</span><span class="tl">웰니스</span></button>
+      <button class="tab" data-target="store"><span class="ti">🛒</span><span class="tl">스토어</span></button>
+    </nav>
+  </div>
+
+<script>
+/* ====== 제품 카탈로그 (dwhcmall.com 실제 이미지/링크) ====== */
+const MALL="https://dwhcmall.com/product/detail.html?cate_no=1&display_group=2&product_no=";
+const PRODUCTS={
+  banaba:{name:"식후혈당관리 바나바잎추출물", price:"10,000원", fn:"식후 혈당이 올라가는 것을 억제하는 데 도움을 줄 수 있어요.", tag:"식후혈당", img:"img/banaba.webp", url:MALL+"827"},
+  enercid:{name:"에너씨슬 플래티넘", price:"39,900원", fn:"간·혈압·혈당·콜레스테롤 등 종합 건강 관리에 도움을 줄 수 있어요.", tag:"종합관리", img:"img/enercid.jpg", url:MALL+"706"},
+  enercidMega:{name:"에너씨슬 플래티넘 메가", price:"59,900원", fn:"간·혈압·혈당·콜레스테롤·혈행까지 고함량으로 챙길 수 있어요.", tag:"고함량", img:"img/enercid_mega.jpg", url:MALL+"792"},
+  catechin:{name:"체지방 컷 녹차카테킨", price:"10,000원", fn:"녹차 카테킨 성분이 체지방 감소에 도움을 줄 수 있어요.", tag:"다이어트", img:"img/catechin.webp", url:MALL+"821"},
+  omega:{name:"오메가3 건강한 혈행관리 rTG", price:"기초 라인", fn:"혈중 중성지질·혈행 개선에 도움을 줄 수 있어요.", tag:"혈행", img:"img/omega.webp", url:MALL+"819"}
+};
+
+/* ====== CGM 측정 데모 데이터 ====== */
+const READINGS=[
+  {time:"오늘 08:12 측정", fasting:92,  postmeal:118, meal:"현미밥 반 공기, 구운 닭가슴살, 시금치나물", goal:"건강한 체중 관리"},
+  {time:"오늘 13:24 측정", fasting:112, postmeal:188, meal:"김밥 한 줄, 라면",                       goal:"혈당 안정화"},
+  {time:"오늘 13:50 측정", fasting:98,  postmeal:205, meal:"흰쌀밥 한 공기, 제육볶음, 콜라 한 캔",    goal:"다이어트"},
+  {time:"오늘 19:05 측정", fasting:140, postmeal:230, meal:"짜장면, 탕수육, 군만두",                 goal:"혈당 낮추기"},
+  {time:"오늘 09:30 측정", fasting:88,  postmeal:142, meal:"그릭요거트, 블루베리, 견과류 한 줌",       goal:"혈당 안정화"},
+  {time:"오늘 22:10 측정", fasting:110, postmeal:185, meal:"야식 치킨 반 마리, 맥주 한 캔",           goal:"야식 줄이기"}
+];
+const HOME_IDX=2;     // 홈/트리거가 가리키는 측정(식후 205 → 점수 낮음 + 경고)
+let idx=HOME_IDX;
+
+/* ====== 분석/코치/의학/추천 엔진 (각 에이전트의 데모 로직) ====== */
+function analyze(f,p,meal){
+  const spike=p-f;
+  const fStat=f<100?"정상":(f<126?"주의":"높음");
+  const pStat=p<140?"정상":(p<200?"주의":"높음");
+  const spikeLv=spike<50?"완만":(spike<80?"주의":"가파름");
+  const risk=(f>=126||p>=200);
+  const m=(meal||"").toLowerCase();
+  const refined=/밥|면|라면|빵|떡|토스트|베이글|김밥|짜장|볶음밥|샌드|감자|튀김|과자|칩/.test(m);
+  const sugar=/콜라|주스|잼|초코|디저트|케이크|맥주|술/.test(m);
+  const good=/채소|시금치|브로콜리|샐러드|닭가슴|두부|연어|견과|요거트|단백|블루베리/.test(m);
+  return {f,p,spike,fStat,pStat,spikeLv,risk,refined,sugar,good};
+}
+function glucoseScore(a){
+  let s=100;
+  if(a.fStat==="주의")s-=12; if(a.fStat==="높음")s-=26;
+  if(a.pStat==="주의")s-=15; if(a.pStat==="높음")s-=30;
+  if(a.spikeLv==="주의")s-=8; if(a.spikeLv==="가파름")s-=18;
+  return Math.max(20,Math.min(100,s));
+}
+function coach(a){
+  let s1,s2,s3;
+  if(a.spikeLv==="완만"&&a.pStat==="정상"){s1="오늘 식후 혈당 곡선이 아주 완만하네요 👏";s2=a.good?"채소·단백질이 잘 들어간 균형 잡힌 식사였어요.":"전반적으로 안정적인 식사였어요.";s3="지금 패턴을 꾸준히 이어가면 좋아요. 작은 습관이 가장 강력해요 😊";}
+  else if(a.spikeLv==="가파름"){s1="식사 후 혈당이 평소보다 가파르게 올랐어요.";s2=a.refined?"정제 탄수화물이 겹치면 식후 스파이크가 생기기 쉬워요.":"식사 구성이 혈당을 빠르게 올린 것 같아요.";s3="다음엔 ① 채소·단백질 먼저 → 탄수화물 순서로, ② 식후 10분 산책을 더해보면 같은 메뉴여도 곡선이 훨씬 완만해져요.";}
+  else{s1="혈당이 살짝 주의 구간으로 올라왔네요.";s2=a.sugar?"당류가 든 음료·간식이 영향을 준 것 같아요.":"식사량이나 탄수 비중을 조금 살펴보면 좋아요.";s3="다음 끼니엔 채소를 먼저 드시고, 단 음료는 물·무가당으로 바꿔보는 걸 추천해요 😊";}
+  let msg=`${s1} ${s2} ${s3}`;
+  if(a.risk) msg+=" 공복/식후 수치가 다소 높은 편이라, 비슷한 패턴이 반복되면 의료진과 한 번 상담해보시길 권해요.";
+  return msg;
+}
+function medReview(a){
+  if(a.risk) return {tag:"정밀 검진 권장", body:"공복 또는 식후 혈당이 기준치를 넘는 패턴이 반복된다면, 당화혈색소(HbA1c) 검사로 최근 2~3개월의 혈당 추이를 확인해보시길 권합니다. 식후 고혈당이 지속되면 혈관 건강에 부담이 될 수 있어 조기 관리가 중요합니다."};
+  if(a.spikeLv==="가파름") return {tag:"식후 스파이크 관리", body:"식후 혈당이 급격히 오르는 패턴이 반복되면 인슐린 저항성과 관련될 수 있습니다. 채소·단백질을 먼저 먹는 식사 순서와 식후 가벼운 신체활동이 식후 혈당 상승을 완만하게 하는 데 도움이 된다고 알려져 있습니다."};
+  if(a.pStat!=="정상"||a.fStat!=="정상") return {tag:"생활습관 관리", body:"아직 정상 범위에 가깝지만 일부 수치가 주의 구간입니다. 정제 탄수화물·당류 섭취를 조절하고 규칙적인 신체활동을 유지하면 대사 건강을 안정적으로 관리하는 데 도움이 됩니다."};
+  return {tag:"안정적 패턴 유지", body:"현재 혈당 변동이 안정적입니다. 지금처럼 균형 잡힌 식사와 규칙적인 활동을 유지하는 것이 장기적인 대사 건강에 가장 좋습니다."};
+}
+function recommend(a,goal){
+  const g=(goal||""); const out=[];
+  const add=(p,why)=>{ if(!out.find(o=>o.p===p)) out.push({p,why}); };
+  if(a.risk) add(PRODUCTS.enercidMega,"공복·식후가 모두 높아 종합 관리가 필요해요");
+  if(a.spikeLv!=="완만"||a.pStat!=="정상") add(PRODUCTS.banaba,"오늘 식후 혈당 스파이크가 있었어요");
+  if(/다이어트|감량|체중|체지방/.test(g)) add(PRODUCTS.catechin,"체중·체지방 목표에 맞아요");
+  if(a.fStat!=="정상") add(PRODUCTS.enercid,"공복혈당이 주의 구간이에요");
+  if(a.good||a.spikeLv==="완만") add(PRODUCTS.omega,"지금 패턴 유지에 좋은 기초 관리예요");
+  [PRODUCTS.banaba,PRODUCTS.omega,PRODUCTS.enercid,PRODUCTS.catechin].forEach(p=>{ if(out.length<4) add(p,"함께 챙기면 좋은 제품이에요"); });
+  return out.slice(0,4);
+}
+
+/* ====== 혈당 곡선 SVG ====== */
+function buildCurve(f,p){
+  const pts=[f,f+8,f-4,f+6,Math.round((f+p)/2),p,p-12,p-40,f+22,f+8,f+2];
+  const W=300,H=64,pad=6, min=Math.min(...pts)-10, max=Math.max(...pts)+10;
+  const x=i=>pad+i*((W-pad*2)/(pts.length-1)), y=v=>H-pad-((v-min)/(max-min))*(H-pad*2);
+  const line=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area=`${x(0)},${H} `+line+` ${x(pts.length-1)},${H}`;
+  const danger=p>=200||f>=126, col=danger?"#e08a2b":"#6053f3";
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+    <line x1="0" y1="${y(140).toFixed(1)}" x2="${W}" y2="${y(140).toFixed(1)}" stroke="#dcdcee" stroke-width="1" stroke-dasharray="3 3"/>
+    <polygon points="${area}" fill="url(#g)"/>
+    <polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(pts.indexOf(p)).toFixed(1)}" cy="${y(p).toFixed(1)}" r="4" fill="${col}"/></svg>`;
+}
+
+/* ====== 홈 히어로: 실시간 혈당 곡선 ====== */
+function smoothD(a){
+  if(a.length<2) return "";
+  let d=`M${a[0][0].toFixed(1)},${a[0][1].toFixed(1)}`;
+  for(let i=0;i<a.length-1;i++){
+    const p0=a[i-1]||a[i], p1=a[i], p2=a[i+1], p3=a[i+2]||a[i+1];
+    const c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+    const c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+    d+=` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+function buildHeroChart(){
+  const P=[
+    [10.0,84],[10.4,86,"run"],[10.9,83],[11.3,85],[11.6,88,"food"],[12.0,87],[12.4,91],
+    [12.8,97],[13.1,94],[13.5,103],[13.9,114],[14.2,122],[14.5,116],[14.8,123],[15.1,126],
+    [15.4,118],[15.7,108],[16.0,108,"run"],[16.3,104],[16.7,109],[17.1,105],[17.5,109],[17.8,106],[18.0,105]
+  ];
+  const W=340,H=212,L=6,R=10,T=18,B=34, xmin=10,xmax=20, ymin=48,ymax=138;
+  const x=h=>L+(h-xmin)/(xmax-xmin)*(W-L-R), y=v=>T+(1-(v-ymin)/(ymax-ymin))*(H-T-B);
+  const base=H-B, P2=P.map(p=>[x(p[0]),y(p[1])]);
+  const MKPATH={
+    run:`<circle cx="14" cy="4.6" r="1.8"/><path d="M13.5 8.2l-3.5 3 2.6 3v4.4"/><path d="M10 11.2l-3.4 1.2"/><path d="M14.6 13l3.4 1.2"/><path d="M12.6 18.2l-2.6 3"/>`,
+    food:`<path d="M7 3v6a1.8 1.8 0 0 0 3.6 0V3"/><path d="M8.8 12v9"/><path d="M16.4 3c-1.3 0-2.2 2.2-2.2 5s.9 4 2.2 4"/><path d="M16.4 3v18"/>`
+  };
+  const band=`<rect x="0" y="${T}" width="${W}" height="${(base-T).toFixed(1)}" rx="14" fill="#f6f5fc"/>`;
+  const grid=[120,60].map(g=>`<line x1="${L}" y1="${y(g).toFixed(1)}" x2="${W-R}" y2="${y(g).toFixed(1)}" stroke="#cfc9e6" stroke-dasharray="2 4"/><text x="${(W-R-8).toFixed(1)}" y="${(y(g)+(g===120?14:-6)).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="#aaa6bd">${g}</text>`).join("");
+  // 부드러운 곡선: purple 전체 + 고혈당(>=110) 구간 red 오버레이
+  let rs=-1,re=-1; P.forEach((p,i)=>{ if(p[1]>=110){ if(rs<0)rs=i; re=i; } });
+  let segs=`<path d="${smoothD(P2)}" fill="none" stroke="#6a5cf0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if(rs>=0){ const redPts=P2.slice(Math.max(0,rs-1), re+2); segs+=`<path d="${smoothD(redPts)}" fill="none" stroke="#ee5a6e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`; }
+  const marks=P.map((p,i)=>{ if(!p[2]) return ""; const cx=P2[i][0], cy=P2[i][1];
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="14" fill="#fff" stroke="#9b86f2" stroke-width="2"/><svg x="${(cx-7).toFixed(1)}" y="${(cy-7).toFixed(1)}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b5cf0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MKPATH[p[2]]}</svg>`;
+  }).join("");
+  const lx=P2[P2.length-1][0].toFixed(1), ly=P2[P2.length-1][1].toFixed(1);
+  const now=`<line x1="${lx}" y1="${T-4}" x2="${lx}" y2="${base+5}" stroke="#7d78e8" stroke-dasharray="2 4" stroke-width="1.2"/><circle cx="${lx}" cy="${ly}" r="6" fill="#6a5cf0" stroke="#fff" stroke-width="2.5"/>`;
+  const xl=[10,12,14,16,18,20].map(h=>`<line x1="${x(h).toFixed(1)}" y1="${base+9}" x2="${x(h).toFixed(1)}" y2="${base+14}" stroke="#cfc9e6" stroke-width="1.5"/><text x="${x(h).toFixed(1)}" y="${H-3}" text-anchor="middle" font-size="12" fill="#9b97b3">${h===20?'20':h+':00'}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}">${band}${grid}${segs}${marks}${now}${xl}</svg>`;
+}
+
+/* ====== 홈 렌더 ====== */
+function renderHome(){ document.getElementById("heroChart").innerHTML=buildHeroChart(); }
+
+/* 오늘의 액션 (실행 추적) */
+const ACTIONS=[
+  {t:"채소·단백질 먼저, 탄수화물 나중에 먹기", done:true},
+  {t:"점심 식후 10분 산책하기", done:false},
+  {t:"단 음료 대신 물·무가당으로 바꾸기", done:false}
+];
+function renderActions(){
+  const done=ACTIONS.filter(a=>a.done).length;
+  document.getElementById("actions").innerHTML=
+   `<div class="act-prog"><span>오늘 ${done}/${ACTIONS.length} 완료</span><span class="act-pct">${Math.round(done/ACTIONS.length*100)}%</span></div>`+
+   ACTIONS.map((a,i)=>`<div class="act ${a.done?'done':''}" data-act="${i}"><span class="act-ck">${a.done?'✓':''}</span><span class="act-t">${a.t}</span></div>`).join("");
+}
+document.getElementById("actions").addEventListener("click",e=>{ const el=e.target.closest(".act"); if(!el) return; ACTIONS[+el.dataset.act].done=!ACTIONS[+el.dataset.act].done; renderActions(); });
+
+/* 나만의 혈당 음식 사전 */
+const FOODDICT=[
+  {n:"김밥+라면", avg:76, cnt:4},{n:"제육볶음+콜라", avg:107, cnt:2},{n:"비빔밥", avg:62, cnt:5},
+  {n:"현미밥 균형식", avg:26, cnt:8},{n:"그릭요거트+견과", avg:18, cnt:6},{n:"짜장면+탕수육", avg:95, cnt:1},
+  {n:"닭가슴살 도시락", avg:30, cnt:7},{n:"치킨+맥주", avg:88, cnt:2},{n:"샐러드", avg:15, cnt:9}
+].sort((a,b)=>b.avg-a.avg);
+function renderFoodDict(q=""){
+  const max=Math.max(...FOODDICT.map(f=>f.avg));
+  const list=FOODDICT.filter(f=>f.n.includes(q));
+  document.getElementById("fooddict").innerHTML= list.length ? list.map(f=>{
+    const cls=f.avg>=80?'hi':f.avg>=50?'mid':'ok';
+    return `<div class="fd"><div class="fd-top"><span class="fd-n">${f.n}</span><span class="fd-meta"><b class="fd-imp ${cls}">+${f.avg}</b> · ${f.cnt}회</span></div>
+      <div class="fd-bar"><i class="${cls}" style="width:${Math.round(f.avg/max*100)}%"></i></div></div>`;
+  }).join("") : `<div class="fd-empty">"${q}" 기록이 아직 없어요.</div>`;
+}
+document.getElementById("fdSearch").addEventListener("input",e=>renderFoodDict(e.target.value.trim()));
+function renderHomeSummary(){
+  const el=document.getElementById("homeSummary");
+  if(!el) return;
+  if(window.lastCoach){
+    el.innerHTML=`<div class="summary"><div class="h">💬 AI 혈당코치 요약</div>
+      <div class="bd">${window.lastCoach}</div>
+      <div class="go" data-go="coach">전체 코칭 다시 보기 ›</div></div>`;
+  }else{
+    el.innerHTML=`<div class="summary empty" data-go="coach"><div class="h">🤖 아직 오늘 코칭을 받지 않았어요</div>
+      <div class="bd">식단을 기록하면 5명의 AI 에이전트가 분석해 개인화 코칭을 만들어드려요.</div>
+      <div class="go">AI 코치에게 코칭 받기 ›</div></div>`;
+  }
+}
+
+/* ====== 홈: AI 코치 말풍선 (과학적 대사 원리 + 임상 근거) ====== */
+function homeAdvice(a,r){
+  if(a.risk||a.spikeLv==="가파름") return {
+    event:"식후 혈당 ↑ 감지",
+    msg:`방금 식후 혈당이 <b>${r.postmeal}mg/dL</b>까지 올랐어요. 정제 탄수화물은 소화 과정에서 포도당으로 빠르게 분해돼 혈당을 급격히 올리고 인슐린을 과다 분비시켜요. 채소·단백질을 먼저 먹는 '거꾸로 식사법'만으로도 식후 혈당 피크를 낮출 수 있어요.`,
+    sci:"🔬 임상 근거 · 식사 순서 변경 시 식후 혈당 피크 평균 20~30%↓ (food-order 연구)" };
+  if(a.pStat!=="정상"||a.fStat!=="정상") return {
+    event:"혈당 주의 구간",
+    msg:`혈당이 살짝 주의 구간이에요. 당류 음료의 액상과당은 위를 거의 거치지 않고 빠르게 흡수돼 혈당을 올려요. 같은 끼니라도 단 음료를 물·무가당으로 바꾸면 혈당 곡선이 완만해져요.`,
+    sci:"🔬 대사 원리 · 액상과당의 빠른 흡수와 혈당 변동성(glycemic variability)" };
+  return {
+    event:"안정적 패턴 👏",
+    msg:`오늘 식후 혈당 변동이 완만해요. 식이섬유와 단백질이 위 배출 속도를 늦춰 포도당이 천천히 흡수됐기 때문이에요. 이 패턴을 유지하면 인슐린 민감성 개선에 도움이 됩니다.`,
+    sci:"🔬 대사 원리 · 식이섬유·단백질의 위 배출 지연과 인슐린 민감성" };
+}
+function renderAiBubble(){
+  const r=READINGS[HOME_IDX], a=analyze(r.fasting,r.postmeal,r.meal), ad=homeAdvice(a,r);
+  document.getElementById("aiBubble").innerHTML=
+   `<div class="aibubble">
+     <div class="bubble">
+       <div class="bh"><span class="ev">${ad.event}</span></div>
+       <div class="bt">${ad.msg}</div>
+       <div class="sci">${ad.sci}</div>
+       <button class="bgo" data-go="coach">AI 코치와 자세히 상담하기 ›</button>
+     </div></div>`;
+}
+
+/* ====== 목표 (사용자 설정 + 진행률) ====== */
+const GOAL={ name:"8주 혈당 다이어트", metric:"체중", start:72, current:68.5, target:64, unit:"kg", dleft:23 };
+const GTREND=[72,71,70.2,69.4,68.9,68.5]; // 주차별 체중(감량 추세)
+function goalPct(){ return Math.max(0,Math.min(100, Math.round((GOAL.current-GOAL.start)/(GOAL.target-GOAL.start)*100))); }
+function renderGoal(){
+  const p=goalPct(), C=2*Math.PI*37, off=(C*(1-p/100)).toFixed(1);
+  document.getElementById("goalCard").innerHTML=
+   `<div class="ring"><svg width="84" height="84">
+      <circle cx="42" cy="42" r="37" fill="none" stroke="#ececf6" stroke-width="8"/>
+      <circle cx="42" cy="42" r="37" fill="none" stroke="url(#gg)" stroke-width="8" stroke-linecap="round"
+        stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off}" transform="rotate(-90 42 42)"/>
+      <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6053f3"/><stop offset="1" stop-color="#b15eff"/></linearGradient></defs>
+     </svg><div class="pct"><b>${p}%</b><span>달성</span></div></div>
+    <div class="gi"><div class="gh"><div class="gt">🎯 ${GOAL.name}</div><button class="edit" id="goalEdit">목표 수정</button></div>
+      <div class="gm">${GOAL.metric} <b>${GOAL.current}${GOAL.unit}</b> → 목표 <b>${GOAL.target}${GOAL.unit}</b> (시작 ${GOAL.start}${GOAL.unit})</div>
+      <div class="gtrend">${buildMiniTrend()}</div>
+      <div class="gd">🔥 목표까지 ${Math.abs(GOAL.target-GOAL.current).toFixed(1)}${GOAL.unit} · D-${GOAL.dleft}</div></div>`;
+  document.getElementById("goalEdit").onclick=()=>{
+    const t=prompt("목표 체중(kg)을 입력하세요 (현재보다 낮게)", GOAL.target);
+    const n=parseFloat(t);
+    if(n>0 && n<GOAL.current){ GOAL.target=n; renderGoal(); }
+    else if(t!=null){ alert(`현재 체중(${GOAL.current}kg)보다 낮게 입력해 주세요.`); }
+  };
+}
+function buildMiniTrend(){
+  const pts=GTREND, vals=[...pts,GOAL.target], W=240,H=30,pad=3, min=Math.min(...vals)-2, max=Math.max(...vals)+2;
+  const x=i=>pad+i*((W-pad*2)/(pts.length-1)), y=v=>H-pad-((v-min)/(max-min))*(H-pad*2);
+  const line=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <polyline points="${line}" fill="none" stroke="#6053f3" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(pts.length-1).toFixed(1)}" cy="${y(pts[pts.length-1]).toFixed(1)}" r="3" fill="#6053f3"/></svg>`;
+}
+function buildGoalChart(){
+  const pts=GTREND, labels=["1주","2주","3주","4주","5주","현재"], target=GOAL.target;
+  const W=320,H=140,L=8,R=10,T=18,B=22;
+  const vals=[...pts,target,GOAL.start], min=Math.min(...vals)-3, max=Math.max(...vals)+3;
+  const x=i=>L+i*((W-L-R)/(pts.length-1)), y=v=>T+(1-(v-min)/(max-min))*(H-T-B);
+  const line=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area=`${x(0).toFixed(1)},${H-B} `+line+` ${x(pts.length-1).toFixed(1)},${H-B}`;
+  const ty=y(target).toFixed(1), lx=x(pts.length-1).toFixed(1), ly=y(pts[pts.length-1]).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:148px;display:block;">
+    <defs><linearGradient id="gc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6053f3" stop-opacity=".18"/><stop offset="1" stop-color="#6053f3" stop-opacity="0"/></linearGradient></defs>
+    <line x1="${L}" y1="${ty}" x2="${W-R}" y2="${ty}" stroke="#b15eff" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="${W-R}" y="${(+ty-5).toFixed(1)}" text-anchor="end" font-size="10" fill="#b15eff" font-weight="700">목표 ${target}${GOAL.unit}</text>
+    <polygon points="${area}" fill="url(#gc)"/>
+    <polyline points="${line}" fill="none" stroke="#6053f3" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${lx}" cy="${ly}" r="4.5" fill="#fff" stroke="#6053f3" stroke-width="2.5"/>
+    ${labels.map((l,i)=>`<text x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9.5" fill="#9a9ab2">${l}</text>`).join("")}
+  </svg>
+  <div class="goal-proj">📈 현재 추세라면 약 <b>D-${GOAL.dleft}</b>에 목표 ${target}${GOAL.unit} 달성 예상이에요 🎉</div>`;
+}
+
+/* ====== AI 코치 화면 ====== */
+function loadReading(){
+  const r=READINGS[idx];
+  document.getElementById("cgmTime").textContent=r.time;
+  document.getElementById("fVal").textContent=r.fasting;
+  document.getElementById("pVal").textContent=r.postmeal;
+  document.getElementById("vF").classList.toggle("hi",r.fasting>=126);
+  document.getElementById("vP").classList.toggle("hi",r.postmeal>=200);
+  document.getElementById("curve").innerHTML=buildCurve(r.fasting,r.postmeal);
+  document.getElementById("meal").value=r.meal;
+  document.getElementById("goal").value=r.goal;
+}
+document.getElementById("reload").onclick=()=>{ idx=(idx+1)%READINGS.length; loadReading(); };
+
+document.getElementById("go").onclick=async ()=>{
+  const r=READINGS[idx], f=r.fasting, p=r.postmeal;
+  const meal=document.getElementById("meal").value, goal=document.getElementById("goal").value;
+  if(!meal.trim()){ alert("식단을 입력해 주세요."); return; }
+  document.getElementById("form").style.display="none";
+  const pipe=document.getElementById("pipe"); pipe.classList.add("show");
+  const steps=[...pipe.querySelectorAll(".step")];
+  for(let i=0;i<steps.length;i++){ steps[i].classList.add("active"); await wait(700); steps[i].classList.remove("active"); steps[i].classList.add("done"); steps[i].querySelector(".dot").textContent="✓"; }
+  await wait(250);
+  /* ===== 나중에 이 부분을 Dify API 호출로 교체 (callDify) ===== */
+  const a=analyze(f,p,meal), coachMsg=coach(a), med=medReview(a), recos=recommend(a,goal);
+  window.lastCoach=coachMsg; renderHomeSummary();
+  document.getElementById("coachMsg").textContent=coachMsg;
+  document.getElementById("badges").innerHTML=
+    `<span class="badge">공복 ${a.fStat}</span><span class="badge">식후 ${a.pStat}</span><span class="badge">스파이크 ${a.spikeLv}</span>`+
+    (a.risk?`<span class="badge risk">⚠ 의료진 상담 권장</span>`:"");
+  // 같은 메뉴 Before/After (행동 강화)
+  const prevSpike=a.spike+(a.spikeLv==="완만"?0:18), delta=prevSpike-a.spike;
+  document.getElementById("cmpWrap").innerHTML = delta>0 ?
+    `<div class="cmp"><div class="cmp-h">📊 같은 메뉴, 이렇게 바뀌었어요</div>
+       <div class="cmp-row">
+         <div class="cmp-b"><div class="cl">지난번</div><div class="cv">+${prevSpike}</div></div>
+         <div class="cmp-arrow">→</div>
+         <div class="cmp-b ok"><div class="cl">오늘</div><div class="cv">+${a.spike}</div></div>
+         <div class="cmp-delta">−${delta} 개선!</div>
+       </div>
+       <div class="cmp-note">채소 먼저 먹기·식후 산책 같은 작은 습관이 만든 차이예요 👏</div></div>` : "";
+  document.getElementById("medWrap").innerHTML=
+    `<div class="med"><div class="who"><div class="av">🩺</div><div>
+       <div class="nm">AI 의학 자문 <span class="aibadge">AI</span></div>
+       <div class="role">근거 기반 대사건강 자문 에이전트</div></div></div>
+       <div class="mtag">📌 ${med.tag}</div><div class="mbody">${med.body}</div>
+       <div class="mfoot">본 코멘트는 AI가 일반 의학 정보를 바탕으로 생성했으며, 특정 개인에 대한 진단·처방이 아닙니다.</div></div>`;
+  const cards=recos.map(({p,why})=>
+    `<a class="prod" href="${p.url}" target="_blank" rel="noopener" draggable="false">
+       <div class="thumb"><span class="tag">${p.tag}</span><img src="${p.img}" alt="${p.name}" draggable="false"/></div>
+       <div class="info"><div class="nm">${p.name}</div><div class="why">💡 ${why}</div>
+         <div class="fn">${p.fn}</div><div class="pr">${p.price}</div><div class="go">대웅몰에서 보기 ›</div></div></a>`).join("");
+  document.getElementById("prodWrap").innerHTML=
+    `<div class="reco-h"><span>🛒 나에게 맞는 제품</span><small>대웅 헬스케어몰 · ${recos.length}개</small></div>
+     <div class="reco-scroll" id="recoScroll">${cards}</div>`;
+  enableDrag(document.getElementById("recoScroll"));
+  pipe.classList.remove("show");
+  document.getElementById("result").classList.add("show");
+  document.getElementById("viewport").scrollTo({top:0,behavior:"smooth"});
+};
+document.getElementById("reset").onclick=()=>{
+  document.getElementById("result").classList.remove("show");
+  const pipe=document.getElementById("pipe");
+  pipe.querySelectorAll(".step").forEach((s,i)=>{s.className="step"; s.querySelector(".dot").textContent=i+1;});
+  document.getElementById("form").style.display="block";
+};
+function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+function enableDrag(el){
+  let down=false,sx=0,sl=0,moved=0;
+  el.addEventListener("mousedown",e=>{down=true;moved=0;sx=e.pageX;sl=el.scrollLeft;el.classList.add("drag");});
+  window.addEventListener("mouseup",()=>{down=false;el.classList.remove("drag");});
+  el.addEventListener("mouseleave",()=>{down=false;el.classList.remove("drag");});
+  el.addEventListener("mousemove",e=>{if(!down)return;const dx=e.pageX-sx;moved+=Math.abs(dx);el.scrollLeft=sl-dx;});
+  el.addEventListener("click",e=>{if(moved>6)e.preventDefault();},true);
+}
+
+/* ====== 화면 전환 ====== */
+function showScreen(target){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("screen-"+target).classList.add("active");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.target===target));
+  if(target==="record"){ renderRecord(); renderReport(); }
+  if(target==="report") renderWellness();
+  if(target==="store") renderStore();
+  document.getElementById("viewport").scrollTo({top:0});
+}
+document.querySelectorAll(".tab").forEach(t=>{ t.onclick=()=>showScreen(t.dataset.target); });
+
+/* ====== 기록 화면: 복약 내역 (라인아트 시간 아이콘) ====== */
+const TSVG={
+  아침:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a2a6ac" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18h14"/><path d="M8 18a4 4 0 0 1 8 0"/><path d="M12 4v3"/><path d="M5.5 8.5 7 10"/><path d="M18.5 8.5 17 10"/><path d="M3 14h1.6"/><path d="M19.4 14H21"/></svg>`,
+  점심:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a2a6ac" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/><path d="M5.6 5.6 7 7"/><path d="M17 17l1.4 1.4"/><path d="M18.4 5.6 17 7"/><path d="M7 17l-1.4 1.4"/></svg>`,
+  저녁:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a2a6ac" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14.5A6 6 0 1 1 9.5 7 4.7 4.7 0 0 0 17 14.5z"/><path d="M18.4 5.8l.45 1.25 1.25.45-1.25.45-.45 1.25-.45-1.25L16.7 7.5l1.25-.45z" fill="#a2a6ac" stroke="none"/></svg>`
+};
+const MEALLOG=[
+  {day:"29", wd:"화", items:[
+    {src:"아침 식사", nm:"현미밥 반 공기, 닭가슴살, 시금치나물", t:"아침"},
+    {src:"점심 식사", nm:"김밥 한 줄, 라면", t:"점심"},
+    {src:"저녁 식사", nm:"두부김치, 잡곡밥, 된장국", t:"저녁"} ]},
+  {day:"28", wd:"월", items:[
+    {src:"아침 식사", nm:"그릭요거트, 블루베리, 견과류 한 줌", t:"아침"},
+    {src:"점심 식사", nm:"비빔밥(고추장 많이)", t:"점심"},
+    {src:"저녁 식사", nm:"치킨 반 마리, 맥주 한 캔", t:"저녁"} ]},
+  {day:"27", wd:"일", items:[
+    {src:"점심 식사", nm:"흰쌀밥 한 공기, 제육볶음, 콜라", t:"점심"},
+    {src:"저녁 식사", nm:"연어구이, 퀴노아, 브로콜리", t:"저녁"} ]}
+];
+function renderRecord(){
+  document.getElementById("mealList").innerHTML=MEALLOG.map(g=>
+   `<div class="medgroup"><div class="medday"><span class="dn">${g.day}</span><span class="dw">(${g.wd})</span></div>
+     <div class="medcard">${g.items.map(it=>
+       `<div class="meditem"><div class="mi-info"><div class="mi-src">${it.src}</div><div class="mi-nm">${it.nm}</div></div><div class="mi-t">${TSVG[it.t]}</div></div>`).join("")}</div></div>`).join("");
+}
+document.getElementById("recSeg").addEventListener("click",e=>{
+  const b=e.target.closest(".segbtn"); if(!b) return;
+  document.querySelectorAll("#recSeg .segbtn").forEach(x=>x.classList.toggle("active",x===b));
+  const seg=b.dataset.seg;
+  document.getElementById("recMeal").style.display = seg==="meal"?"block":"none";
+  document.getElementById("recReport").style.display = seg==="report"?"block":"none";
+  if(seg==="report") renderReport();
+});
+document.getElementById("screen-record").addEventListener("click",e=>{ if(e.target.closest("[data-go='coach']")){ idx=HOME_IDX; loadReading(); showScreen("coach"); } });
+
+/* ====== 웰니스 컨텐츠 (공식 인스타그램 게시물/릴스 임베드) ====== */
+const IG_POSTS=[
+  "https://www.instagram.com/reel/DRwRBFKjcjM/",
+  "https://www.instagram.com/reel/DTKVOeID5A8/",
+  "https://www.instagram.com/p/DMZnpLMz08w/",
+  "https://www.instagram.com/p/DXvlUCLkayC/"
+];
+function renderWellness(){
+  document.getElementById("wfeed").innerHTML=IG_POSTS.map(u=>
+    `<blockquote class="instagram-media" data-instgrm-permalink="${u}" data-instgrm-version="14" style="margin:0 0 14px;width:100%;min-width:300px;background:#fff;border-radius:16px"></blockquote>`).join("");
+  const run=()=>{ if(window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process(); };
+  run(); setTimeout(run,500); setTimeout(run,1400); // embed.js 비동기 로드 보정
+}
+
+/* ====== 리포트 화면 ====== */
+// 한 달(30일) 일별 혈당 점수 — 점진적 개선 추세
+const MONTH=[52,58,49,61,55,63,57,60,54,66,62,58,70,64,68,61,72,66,59,74,69,71,65,77,73,68,79,75,72,80];
+const MONTH_OFFSET=1; // 달력 시작 빈 칸
+function hmColor(s){ return s>=80?'#6053f3': s>=72?'#9389ef': s>=64?'#c2bbf4': s>=56?'#f3c08a':'#ee8a6e'; }
+function buildHeatmap(){
+  const wd=["일","월","화","수","목","금","토"];
+  let cells=wd.map(d=>`<div class="hmwd">${d}</div>`).join("");
+  for(let i=0;i<MONTH_OFFSET;i++) cells+=`<div class="hmcell empty"></div>`;
+  MONTH.forEach((s,i)=>{ cells+=`<div class="hmcell" style="background:${hmColor(s)}" title="${i+1}일 · ${s}점"></div>`; });
+  return `<div class="heatgrid">${cells}</div>
+    <div class="heatlegend"><span>낮음</span><i style="background:#ee8a6e"></i><i style="background:#f3c08a"></i><i style="background:#c2bbf4"></i><i style="background:#9389ef"></i><i style="background:#6053f3"></i><span>높음</span></div>`;
+}
+const FOODS=[
+  {n:"제육볶음 + 콜라", imp:107},{n:"짜장면·탕수육 세트", imp:90},{n:"김밥 + 라면", imp:76},
+  {n:"베이글 + 오렌지주스", imp:58},{n:"현미밥 균형식", imp:26}
+].sort((a,b)=>b.imp-a.imp);
+function buildGauge(score,target){
+  const W=280,H=158,cx=W/2,cy=H-10,R=120,r=102,N=44;
+  let ticks="";
+  for(let i=0;i<=N;i++){
+    const a=Math.PI-(i/N)*Math.PI;
+    const x1=cx+R*Math.cos(a), y1=cy-R*Math.sin(a), x2=cx+r*Math.cos(a), y2=cy-r*Math.sin(a);
+    const on=i/N<=score/100;
+    ticks+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${on?'#37b36b':'#e4e4ec'}" stroke-width="3" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">${ticks}
+    <text x="${cx}" y="${cy-66}" text-anchor="middle" font-size="13" fill="#a2a6ac">${target}</text>
+    <text x="${cx}" y="${cy-20}" text-anchor="middle" font-size="42" font-weight="800" fill="#191c1f">${score}</text>
+    <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="12" fill="#62656b">혈당 건강 점수</text></svg>`;
+}
+const FINDINGS=[
+  {icon:"🩸", color:"#fde7d6", title:"식후 혈당 스파이크", status:"주의", scls:"warn", desc:"정제 탄수화물 식사에서 식후 혈당이 가파르게 올라요. 식사 순서(채소→단백질→탄수화물)부터 바꿔보는 걸 가장 먼저 추천해요."},
+  {icon:"💛", color:"#fff3d4", title:"공복 혈당", status:"보통", scls:"mid", desc:"공복 혈당은 대체로 안정 범위예요. 아침 당류만 조금 줄이면 더 좋아질 수 있어요."},
+  {icon:"⚖️", color:"#e6f0fb", title:"체중·다이어트", status:"최적", scls:"ok", desc:"8주간 3.5kg 감량으로 순조롭게 진행 중이에요. 단백질 섭취를 유지하세요."},
+  {icon:"🫀", color:"#efeafc", title:"대사 건강", status:"양호", scls:"ok", desc:"혈당 변동성이 점차 줄고 있어요. 식후 10분 산책 루틴이 효과를 내고 있어요."}
+];
+function renderReport(){
+  document.getElementById("gauge").innerHTML=buildGauge(72,80);
+  document.getElementById("findings").innerHTML=FINDINGS.map(f=>
+   `<div class="finding"><div class="ficon" style="background:${f.color}">${f.icon}</div>
+     <div class="finfo"><div class="frow"><span class="ft">${f.title}</span><span class="chev">›</span></div>
+       <span class="fbadge ${f.scls}">${f.status}</span>
+       <div class="fdesc">${f.desc}</div></div></div>`).join("");
+  document.getElementById("goalChart").innerHTML=buildGoalChart();
+  document.getElementById("heatmap").innerHTML=buildHeatmap();
+  const max=Math.max(...FOODS.map(f=>f.imp));
+  document.getElementById("foodRank").innerHTML=FOODS.map(f=>{
+    const hi=f.imp>=80;
+    return `<div class="rank"><div class="rt"><span>${f.n}</span><span class="imp ${hi?'hi':'mid'}">+${f.imp}</span></div>
+      <div class="rbar"><i class="${hi?'hi':''}" style="width:${Math.round(f.imp/max*100)}%"></i></div></div>`;
+  }).join("");
+  renderFoodDict();
+}
+
+/* ====== 스토어 화면 ====== */
+const CATS={ "전체":null, "혈당":["banaba"], "다이어트":["catechin"], "종합건강":["enercid","enercidMega"], "혈행":["omega"] };
+const PKEYS=Object.keys(PRODUCTS);
+/* 혈당 맞춤 레시피 릴스 (콘텐츠 → 구매 상품 연결) */
+const RECIPES=[
+  {title:"혈당 안정 두부 비빔밥", benefit:"저GI · 식후 스파이크↓", dur:"0:45", emoji:"🥗", grad:"#7fc99a,#3fae6d", product:"banaba"},
+  {title:"채소 먼저 거꾸로 식사법", benefit:"식사 순서 코칭", dur:"0:30", emoji:"🥦", grad:"#a7d169,#74b53f", product:"omega"},
+  {title:"그린 디톡스 스무디", benefit:"식이섬유 가득", dur:"0:38", emoji:"🥤", grad:"#6fd0b6,#34b08d", product:"catechin"},
+  {title:"닭가슴살 단백 도시락", benefit:"고단백·저탄수", dur:"0:52", emoji:"🍱", grad:"#f3c06a,#e89b3c", product:"enercid"},
+  {title:"식후 10분 산책 루틴", benefit:"혈당 피크 완화", dur:"0:25", emoji:"🚶", grad:"#9aa6f0,#6c79e6", product:"enercidMega"}
+];
+function reelCard(r){
+  const p=PRODUCTS[r.product];
+  return `<div class="reel">
+    <div class="rthumb" style="background:linear-gradient(155deg,${r.grad})">
+      <span class="rdur">▶ ${r.dur}</span>
+      <span class="remoji">${r.emoji}</span><span class="rplay">▶</span>
+      <span class="rben">${r.benefit}</span>
+      <span class="rtitle">${r.title}</span>
+    </div>
+    <a class="rprod" href="${p.url}" target="_blank" rel="noopener">
+      <img src="${p.img}" alt=""/>
+      <div><div class="rpn">${p.name}</div><div class="rpp">${p.price} · 담기 ›</div></div>
+    </a></div>`;
+}
+function scard(key,ai){
+  const p=PRODUCTS[key];
+  return `<a class="scard" href="${p.url}" target="_blank" rel="noopener">
+    <div class="th"><span class="tag">${p.tag}</span>${ai?'<span class="aib">AI 추천</span>':''}<img src="${p.img}" alt="${p.name}"/></div>
+    <div class="si2"><div class="nm">${p.name}</div><div class="pr">${p.price}</div></div></a>`;
+}
+let storeCat="전체";
+function renderStore(){
+  document.getElementById("cats").innerHTML=Object.keys(CATS).map(c=>
+    `<button class="cat ${c===storeCat?'active':''}" data-cat="${c}">${c}</button>`).join("");
+  document.getElementById("reels").innerHTML=RECIPES.map(reelCard).join("");
+  // AI 추천: 홈 측정 기준 상위 제품
+  const r=READINGS[HOME_IDX], a=analyze(r.fasting,r.postmeal,r.meal);
+  const recoKeys=recommend(a,r.goal).map(o=>Object.keys(PRODUCTS).find(k=>PRODUCTS[k]===o.p)).slice(0,4);
+  document.getElementById("storeReco").innerHTML=recoKeys.map(k=>scard(k,true)).join("");
+  // 전체(필터 적용)
+  const keys = storeCat==="전체" ? PKEYS : CATS[storeCat];
+  document.getElementById("storeAll").innerHTML=keys.map(k=>scard(k,false)).join("");
+}
+document.getElementById("cats").addEventListener("click",e=>{
+  const b=e.target.closest(".cat"); if(!b) return; storeCat=b.dataset.cat; renderStore();
+});
+// 리포트 → AI 코치
+document.getElementById("screen-report").addEventListener("click",e=>{ if(e.target.closest("[data-go='coach']")){ idx=HOME_IDX; loadReading(); showScreen("coach"); } });
+// AI 말풍선 → AI 코치(해당 측정값으로)
+document.getElementById("aiBubble").addEventListener("click",e=>{ if(e.target.closest("[data-go='coach']")){ idx=HOME_IDX; loadReading(); showScreen("coach"); } });
+// 홈 요약 카드 → AI 코치
+// 홈 세그먼트(혈당/활동, 업데이트) 시각 토글
+["hseg","upSeg"].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; el.querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b)); }); });
+
+/* ===== (나중에) Dify 연결용 스텁 =====
+async function callDify(input){
+  const r=await fetch("https://api.dify.ai/v1/workflows/run",{method:"POST",
+    headers:{"Authorization":"Bearer 여기에_API_KEY","Content-Type":"application/json"},
+    body:JSON.stringify({inputs:input,response_mode:"blocking",user:"demo"})});
+  return await r.json();
+}*/
+
+/* 초기화 */
+renderHome(); renderAiBubble(); renderActions(); renderGoal(); renderHomeSummary(); loadReading();
+</script>
+<script async src="https://www.instagram.com/embed.js"></script>
+</body>
+</html>
