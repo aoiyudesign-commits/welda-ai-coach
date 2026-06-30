@@ -31,7 +31,7 @@
   .phone{
     width:100%; max-width:420px; background:var(--bg);
     border-radius:38px; overflow:hidden; box-shadow:0 30px 70px rgba(0,0,0,.18);
-    display:flex; flex-direction:column; height:790px;
+    display:flex; flex-direction:column; height:790px; position:relative;
   }
   .viewport{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .viewport::-webkit-scrollbar{width:0;}
@@ -112,15 +112,19 @@
   .sec0{font-size:15px; font-weight:700; letter-spacing:-.3px;}
   .aimode{font-size:11.5px; font-weight:700; color:var(--green-d); background:rgba(96,83,243,.1); border-radius:9999px; padding:6px 12px;}
 
-  /* ===== 홈: AI 코치 말풍선 ===== */
-  .aibubble{display:flex; gap:11px; align-items:flex-start; margin-bottom:6px;}
-  .aibubble .av{width:46px; height:46px; border-radius:50%; flex:none; background:radial-gradient(circle at 32% 26%, #fff, #d9d2ff 80%); display:flex; align-items:center; justify-content:center; font-size:23px; box-shadow:0 6px 14px rgba(96,83,243,.28);}
-  .bubble{flex:1; background:#fff; border-radius:20px 20px 20px 6px; padding:15px 16px; box-shadow:var(--sh); position:relative;}
-  .bubble .bh{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--green-d);}
-  .bubble .ev{font-size:11px; color:var(--warn); font-weight:800; background:var(--warn-l); border-radius:20px; padding:2px 9px; margin-left:auto;}
-  .bubble .bt{font-size:13px; line-height:1.62; margin-top:9px;}
-  .bubble .sci{display:inline-block; font-size:10.5px; font-weight:700; color:var(--sci); background:var(--sci-bg); border-radius:8px; padding:4px 9px; margin-top:11px;}
-  .bubble .bgo{display:block; margin-top:12px; font-size:12.5px; font-weight:600; letter-spacing:.24px; color:#fff; background:var(--green); border:none; border-radius:9999px; padding:12px; width:100%; cursor:pointer; font-family:inherit;}
+  /* ===== 홈: 웰다 AI 코치 (인사 헤더 + 캐릭터 + 안내 카드) ===== */
+  .coach-sec{margin-bottom:24px;}
+  .coach-greet{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px 14px;}
+  .cg-text{font-size:18px; font-weight:500; line-height:1.42; color:var(--ink); letter-spacing:-.3px;}
+  .cg-text b{font-weight:800;}
+  .cg-char{width:92px; height:92px; flex:none;}
+  .cg-char svg{display:block; width:100%; height:100%;}
+  .guide-card{background:#fff; box-shadow:var(--sh); border-radius:20px; padding:18px;}
+  .gc-h{display:flex; align-items:center; gap:6px; font-size:14px; font-weight:800;}
+  .gc-h .ev{margin-left:auto; font-size:11px; color:var(--warn); font-weight:800; background:var(--warn-l); border-radius:9999px; padding:3px 10px;}
+  .gc-body{font-size:13px; line-height:1.65; margin-top:13px; color:var(--ink);}
+  .guide-card .sci{display:inline-block; font-size:10.5px; font-weight:700; color:var(--sci); background:var(--sci-bg); border-radius:8px; padding:5px 10px; margin-top:13px;}
+  .guide-card .bgo{display:block; margin-top:14px; font-size:12.5px; font-weight:600; color:#fff; background:var(--green); border:none; border-radius:9999px; padding:13px; width:100%; cursor:pointer; font-family:inherit;}
 
   /* 목표 미니 추이 */
   .gtrend{margin-top:8px;} .gtrend svg{width:100%; height:30px; display:block;}
@@ -207,14 +211,54 @@
   .hsec .act{box-shadow:none; background:#f7f7fb;}
   .hsec .goal{box-shadow:none; border-radius:0; padding:0;}
 
-  /* ===== 오늘의 액션 (실행 추적) ===== */
-  .act-prog{display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:10px;}
-  .act-pct{color:var(--green-d);}
-  .act{display:flex; align-items:center; gap:11px; background:#fff; box-shadow:var(--sh); border-radius:14px; padding:13px 14px; margin-bottom:9px; cursor:pointer;}
-  .act-ck{width:22px; height:22px; border-radius:50%; border:2px solid var(--line); flex:none; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; font-weight:800;}
-  .act.done .act-ck{background:var(--green); border-color:var(--green);}
-  .act-t{font-size:13px; font-weight:600;}
-  .act.done .act-t{color:var(--muted); text-decoration:line-through;}
+  /* ===== 여정 뷰: 다이어트 목표 히어로 ===== */
+  .jhero{background:linear-gradient(150deg,#8b7cf0,#b3a3f6); border-radius:24px; padding:20px; color:#fff; box-shadow:0 16px 34px rgba(120,95,210,.3); margin-bottom:24px;}
+  .jhero-head{display:flex; justify-content:space-between; align-items:flex-start;}
+  .jh-label{font-size:12px; opacity:.85;}
+  .jh-title{font-size:19px; font-weight:800; margin-top:4px;}
+  .jh-pct{font-size:30px; font-weight:800; line-height:1;}
+  .jh-pct span{font-size:15px; font-weight:700; opacity:.85;}
+  .jh-sub{font-size:12px; opacity:.92; margin-top:12px; line-height:1.5;}
+  .jh-sub b{font-weight:800;}
+  .jh-chart{margin-top:14px;}
+
+  /* ===== 여정: 날짜 헤더 + 주간 탭 ===== */
+  .jr-head{display:flex; align-items:center; justify-content:space-between; margin:0 2px 16px;}
+  .jr-today{font-size:22px; font-weight:800; letter-spacing:-.4px;}
+  .jr-today span{color:var(--stone); font-weight:700;}
+  .jr-ava{width:40px; height:40px; border-radius:50%; background:var(--green-l); display:flex; align-items:center; justify-content:center; font-size:20px;}
+  .jr-week{display:flex; gap:3px; background:#fff; box-shadow:var(--sh); border-radius:18px; padding:12px 6px; margin-bottom:24px;}
+  .jrd{flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; padding:6px 0; border-radius:14px;}
+  .jrd.on{background:#f3f1fd;}
+  .jrd-w{font-size:11px; color:var(--muted); font-weight:600;}
+  .jrd-n{font-size:15px; font-weight:800;}
+  .jrd.on .jrd-n{color:var(--green-d);}
+  .jrd svg{display:block;}
+
+  /* ===== 여정: 오늘의 플랜 (예정/진행/완료) ===== */
+  .plan{display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--line);}
+  .plan:last-child{border-bottom:none;}
+  .pic{width:48px; height:48px; border-radius:14px; flex:none; display:flex; align-items:center; justify-content:center; font-size:24px;}
+  .pinfo{flex:1; min-width:0;}
+  .pt{font-size:14px; font-weight:800;}
+  .ps{font-size:12px; margin-top:3px; color:var(--muted);}
+  .ps-act{color:#ee5a6e; font-weight:700;}
+  .ps-done{color:#2fa15f; font-weight:700;}
+  .plan-btn{flex:none; border:none; border-radius:9999px; font-size:12.5px; font-weight:700; padding:9px 18px; cursor:pointer; font-family:inherit;}
+  .plan-btn.s-todo{background:var(--ink); color:#fff;}
+  .plan-btn.s-active{background:#fff; border:1.5px solid #ee5a6e; color:#ee5a6e; padding:7.5px 16.5px;}
+  .plan-btn.s-done{background:#e2f3e8; color:#2fa15f;}
+
+  /* ===== AI 코치 추천 → 일정 추가 ===== */
+  .sugg-wrap{background:#fff; box-shadow:var(--sh); border-radius:20px; padding:16px; margin-top:14px;}
+  .sugg-t{font-size:14px; font-weight:800; margin-bottom:4px;}
+  .sugg{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line);}
+  .sugg:last-child{border-bottom:none;}
+  .sugg-btn{flex:none; border:none; border-radius:9999px; font-size:12px; font-weight:700; padding:8px 13px; cursor:pointer; font-family:inherit; background:var(--green-l); color:var(--green-d); white-space:nowrap;}
+  .sugg-btn.added{background:#e2f3e8; color:#2fa15f;}
+  /* 토스트 */
+  .toast{position:absolute; left:50%; bottom:86px; transform:translateX(-50%) translateY(10px); background:rgba(25,28,31,.93); color:#fff; font-size:12.5px; font-weight:600; padding:10px 16px; border-radius:9999px; opacity:0; transition:.25s; pointer-events:none; white-space:nowrap; z-index:60;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
   /* ===== 같은 메뉴 Before/After ===== */
   .cmp{background:linear-gradient(160deg,#f1f0fd,#fbfaff); border-radius:16px; padding:15px; margin-top:14px; box-shadow:var(--sh);}
@@ -460,61 +504,85 @@
       <!-- ===================== 홈 ===================== -->
       <section class="screen active" id="screen-home">
         <div class="body">
-          <!-- 히어로: 실시간 혈당 -->
-          <div class="hero">
-            <div class="hero-tabs"><button class="ht active">혈당</button><button class="ht">여정</button>
-              <span class="hchat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a42d1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></svg></span></div>
-            <div class="hdate">9월 18일(오늘) <span class="nav">‹ ›</span></div>
-            <div class="hmain">
-              <div class="hcur">
-                <div class="htime">오전 18:35</div>
-                <div class="hval">96 <small>mg/dL</small>
-                  <span class="harrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b4ae0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l8 9"/><path d="M16 9v7h-7"/></svg></span>
-                  <span class="hrefresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b0b3bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 4 21 9 16 9"/></svg></span>
+          <!-- 혈당 / 여정 토글 -->
+          <div class="hero-tabs" id="homeTabs" style="margin-bottom:18px">
+            <button class="ht active" data-view="glucose">혈당</button>
+            <button class="ht" data-view="journey">여정</button>
+            <span class="hchat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a42d1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/></svg></span>
+          </div>
+
+          <!-- ===== 혈당 뷰 ===== -->
+          <div id="viewGlucose">
+            <div class="hero">
+              <div class="hdate">9월 18일(오늘) <span class="nav">‹ ›</span></div>
+              <div class="hmain">
+                <div class="hcur">
+                  <div class="htime">오전 18:35</div>
+                  <div class="hval">96 <small>mg/dL</small>
+                    <span class="harrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b4ae0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l8 9"/><path d="M16 9v7h-7"/></svg></span>
+                    <span class="hrefresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b0b3bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 4 21 9 16 9"/></svg></span>
+                  </div>
+                  <div class="hsensor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6053f3" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#6053f3" stroke="none"/></svg> 센서 연동 모드</div>
                 </div>
-                <div class="hsensor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6053f3" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#6053f3" stroke="none"/></svg> 센서 연동 모드</div>
+                <div class="scorehex">
+                  <div class="num">50<small>점</small></div>
+                  <div class="lab">혈당 점수</div>
+                </div>
               </div>
-              <div class="scorehex">
-                <div class="num">50<small>점</small></div>
-                <div class="lab">혈당 점수</div>
+              <div class="herochart" id="heroChart"></div>
+              <div class="statsbar">
+                <div class="st"><div class="sl">혈당 점수</div><div class="sv">50<small>점</small></div></div>
+                <div class="vdiv"></div>
+                <div class="st"><div class="sl">최저 혈당</div><div class="sv low">83<small>mg/dL</small></div></div>
+                <div class="vdiv"></div>
+                <div class="st"><div class="sl">최고 혈당</div><div class="sv high">126<small>mg/dL</small></div></div>
               </div>
             </div>
-            <div class="herochart" id="heroChart"></div>
-            <div class="statsbar">
-              <div class="st"><div class="sl">혈당 점수</div><div class="sv">50<small>점</small></div></div>
-              <div class="vdiv"></div>
-              <div class="st"><div class="sl">최저 혈당</div><div class="sv low">83<small>mg/dL</small></div></div>
-              <div class="vdiv"></div>
-              <div class="st"><div class="sl">최고 혈당</div><div class="sv high">126<small>mg/dL</small></div></div>
+
+            <div class="coach-sec">
+              <div class="coach-greet">
+                <div class="cg-text">유빈 님을 위한<br><b>오늘의 AI 코칭이에요</b></div>
+                <div class="cg-char">
+                  <svg viewBox="0 0 100 104" xmlns="http://www.w3.org/2000/svg">
+                    <defs><linearGradient id="wc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b7cf0"/><stop offset="1" stop-color="#b3a3f6"/></linearGradient></defs>
+                    <polygon points="50,6 89,28 89,72 50,94 11,72 11,28" fill="url(#wc)"/>
+                    <ellipse cx="40" cy="36" rx="22" ry="16" fill="#fff" opacity=".14"/>
+                    <circle cx="42" cy="50" r="4.6" fill="#2b2350"/>
+                    <circle cx="61" cy="50" r="4.6" fill="#2b2350"/>
+                    <circle cx="43.4" cy="48.6" r="1.4" fill="#fff"/>
+                    <circle cx="62.4" cy="48.6" r="1.4" fill="#fff"/>
+                    <circle cx="35" cy="59" r="3.2" fill="#fff" opacity=".35"/>
+                    <circle cx="68" cy="59" r="3.2" fill="#fff" opacity=".35"/>
+                    <path d="M46 60 q5.5 5 11 0" stroke="#2b2350" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                    <g transform="rotate(38 80 30)">
+                      <rect x="74" y="12" width="7" height="27" rx="2" fill="#ffd166"/>
+                      <rect x="74" y="12" width="7" height="6" rx="2" fill="#ff7aa2"/>
+                      <polygon points="74,39 81,39 77.5,47" fill="#f4a259"/>
+                      <polygon points="76.4,44 79,44 77.7,47" fill="#3a3550"/>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+              <div id="aiBubble"></div>
+              <div class="sugg-wrap">
+                <div class="sugg-t">💡 오늘 하면 좋을 것</div>
+                <div id="suggList"></div>
+              </div>
             </div>
           </div>
 
-          <!-- 오늘의 기록 -->
-          <div class="hsec">
-            <div class="hsec-h"><span>오늘의 기록</span><span class="aimode">⚡ AI 모드 활성도 50%</span></div>
-            <div class="tl">
-              <div class="tlrow"><div class="ic">🏋️</div><div><div class="tm">오후 12:05</div><div class="nm">웨이트 운동</div></div><div class="meta">30분</div></div>
-              <div class="tlrow"><div class="ic">⏰</div><div><div class="tm">오후 12:00</div><div class="nm">간헐적 단식 종료</div></div><div class="meta">12시간</div></div>
-              <div class="tlrow"><div class="ic">🍽️</div><div><div class="tm">오후 1:40</div><div class="nm">점심 식사 기록</div></div><div class="meta">완료</div></div>
+          <!-- ===== 여정 뷰 ===== -->
+          <div id="viewJourney" style="display:none">
+            <div class="jr-head">
+              <div class="jr-today">오늘<span>, 5월 26일</span></div>
+              <div class="jr-ava">🙂</div>
             </div>
-          </div>
-
-          <!-- 웰다 AI 코치 (말풍선 + 코칭 통합) -->
-          <div class="hsec">
-            <div class="hsec-t">🤖 웰다 AI 코치</div>
-            <div id="aiBubble"></div>
-          </div>
-
-          <!-- 오늘의 액션 (실행 추적) -->
-          <div class="hsec">
-            <div class="hsec-t">✅ 오늘의 액션</div>
-            <div class="actions" id="actions"></div>
-          </div>
-
-          <!-- 다이어트 목표 -->
-          <div class="hsec">
-            <div class="hsec-t">🎯 내 다이어트 목표</div>
-            <div class="goal" id="goalCard"></div>
+            <div class="jr-week" id="jrWeek"></div>
+            <div class="jhero" id="journeyHero"></div>
+            <div class="hsec">
+              <div class="hsec-h"><span>오늘의 플랜</span><span class="aimode" id="planCount">3/5 완료</span></div>
+              <div id="planList"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -797,19 +865,109 @@ function buildHeroChart(){
 /* ====== 홈 렌더 ====== */
 function renderHome(){ document.getElementById("heroChart").innerHTML=buildHeroChart(); }
 
-/* 오늘의 액션 (실행 추적) */
-const ACTIONS=[
-  {t:"채소·단백질 먼저, 탄수화물 나중에 먹기", done:true},
-  {t:"점심 식후 10분 산책하기", done:false},
-  {t:"단 음료 대신 물·무가당으로 바꾸기", done:false}
-];
-function renderActions(){
-  const done=ACTIONS.filter(a=>a.done).length;
-  document.getElementById("actions").innerHTML=
-   `<div class="act-prog"><span>오늘 ${done}/${ACTIONS.length} 완료</span><span class="act-pct">${Math.round(done/ACTIONS.length*100)}%</span></div>`+
-   ACTIONS.map((a,i)=>`<div class="act ${a.done?'done':''}" data-act="${i}"><span class="act-ck">${a.done?'✓':''}</span><span class="act-t">${a.t}</span></div>`).join("");
+/* 주간 날짜 탭 (진행 arc) */
+const JWEEK=[{d:"월",n:24,p:35},{d:"화",n:25,p:85},{d:"수",n:26,p:55,active:true},{d:"목",n:27,p:0},{d:"금",n:28,p:0},{d:"토",n:29,p:0},{d:"일",n:30,p:0}];
+function arcSvg(p,active){
+  const len=37.7, off=(len*(1-p/100)).toFixed(1), col=active?"#6053f3":(p>=70?"#2fbf9e":(p>0?"#f0913a":"#e6e6ef"));
+  return `<svg width="30" height="15" viewBox="0 0 30 15"><path d="M3 14 A12 12 0 0 1 27 14" fill="none" stroke="#eee" stroke-width="3" stroke-linecap="round"/><path d="M3 14 A12 12 0 0 1 27 14" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${len}" stroke-dashoffset="${off}"/></svg>`;
 }
-document.getElementById("actions").addEventListener("click",e=>{ const el=e.target.closest(".act"); if(!el) return; ACTIONS[+el.dataset.act].done=!ACTIONS[+el.dataset.act].done; renderActions(); });
+function renderWeek(){
+  document.getElementById("jrWeek").innerHTML=JWEEK.map(w=>
+    `<div class="jrd ${w.active?'on':''}"><span class="jrd-w">${w.d}</span><span class="jrd-n">${w.n}</span>${arcSvg(w.p,w.active)}</div>`).join("");
+}
+
+/* 오늘의 플랜 (기록+액션 통합 · 예정/진행/완료) */
+const PLAN=[
+  {ic:"🏋️", bg:"#d6e3ff", t:"웨이트 운동", sub:"상체 루틴 · 30분", s:"done"},
+  {ic:"⏰", bg:"#e7dffb", t:"간헐적 단식", sub:"공복 12시간 유지", s:"done"},
+  {ic:"🥗", bg:"#d8f0de", t:"채소 먼저 식사", sub:"점심 거꾸로 식사법", s:"active"},
+  {ic:"🚶", bg:"#fde6cf", t:"식후 10분 산책", sub:"점심 후 가볍게", s:"todo"},
+  {ic:"💧", bg:"#d6ecf8", t:"단 음료 → 물", sub:"무가당으로 교체", s:"todo"}
+];
+const SBTN={todo:["시작","s-todo"], active:["완료","s-active"], done:["완료 ✓","s-done"]};
+function renderPlan(){
+  document.getElementById("planList").innerHTML=PLAN.map((p,i)=>{
+    const [label,cls]=SBTN[p.s];
+    const sub = p.s==="active"?`<span class="ps-act">● 진행 중</span>` : (p.s==="done"?`<span class="ps-done">✓ 완료</span>` : `<span class="ps-todo">예정 · ${p.sub}</span>`);
+    return `<div class="plan"><div class="pic" style="background:${p.bg}">${p.ic}</div>
+      <div class="pinfo"><div class="pt">${p.t}</div><div class="ps">${sub}</div></div>
+      <button class="plan-btn ${cls}" data-plan="${i}">${label}</button></div>`;
+  }).join("");
+  const pc=document.getElementById("planCount"); if(pc) pc.textContent=`${PLAN.filter(p=>p.s==="done").length}/${PLAN.length} 완료`;
+}
+document.getElementById("planList").addEventListener("click",e=>{
+  const b=e.target.closest(".plan-btn"); if(!b) return;
+  const i=+b.dataset.plan, order=["todo","active","done"];
+  PLAN[i].s=order[(order.indexOf(PLAN[i].s)+1)%3];
+  renderPlan();
+});
+
+/* AI 코치 추천 → 오늘 일정(여정 플랜)에 추가 */
+const SUGGEST=[
+  {ic:"🥗", bg:"#d8f0de", t:"채소 먼저 먹기", d:"점심 때 채소·단백질 먼저"},
+  {ic:"🚶", bg:"#fde6cf", t:"식후 10분 산책", d:"점심 후 가볍게 걷기"},
+  {ic:"💧", bg:"#d6ecf8", t:"단 음료 → 물", d:"무가당으로 바꾸기"},
+  {ic:"🥦", bg:"#e7dffb", t:"저녁 저GI 식단", d:"잡곡·두부 위주로"}
+];
+const SADDED=new Set();
+function renderSuggest(){
+  document.getElementById("suggList").innerHTML=SUGGEST.map((s,i)=>{
+    const on=SADDED.has(i);
+    return `<div class="sugg"><div class="pic" style="background:${s.bg}">${s.ic}</div>
+      <div class="pinfo"><div class="pt">${s.t}</div><div class="ps">${s.d}</div></div>
+      <button class="sugg-btn ${on?'added':''}" data-sugg="${i}" ${on?'disabled':''}>${on?'추가됨 ✓':'+ 일정 추가'}</button></div>`;
+  }).join("");
+}
+document.getElementById("suggList").addEventListener("click",e=>{
+  const b=e.target.closest(".sugg-btn"); if(!b||b.disabled) return;
+  const i=+b.dataset.sugg, s=SUGGEST[i];
+  PLAN.push({ic:s.ic, bg:s.bg, t:s.t, sub:s.d, s:"todo"});
+  SADDED.add(i); renderSuggest();
+  if(document.getElementById("planList")) renderPlan();
+  toast("오늘의 플랜(여정)에 추가했어요");
+});
+function toast(msg){
+  let t=document.getElementById("toast");
+  if(!t){ t=document.createElement("div"); t.id="toast"; t.className="toast"; document.querySelector(".phone").appendChild(t); }
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove("show"),1900);
+}
+
+/* 홈 혈당/여정 뷰 토글 */
+function buildGoalChartHero(){
+  const pts=GTREND, target=GOAL.target, W=320,H=120,L=8,R=10,T=14,B=22;
+  const vals=[...pts,target,GOAL.start], min=Math.min(...vals)-3, max=Math.max(...vals)+3;
+  const x=i=>L+i*((W-L-R)/(pts.length-1)), y=v=>T+(1-(v-min)/(max-min))*(H-T-B);
+  const line=pts.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area=`${x(0).toFixed(1)},${H-B} `+line+` ${x(pts.length-1).toFixed(1)},${H-B}`;
+  const ty=y(target).toFixed(1), lx=x(pts.length-1).toFixed(1), ly=y(pts[pts.length-1]).toFixed(1);
+  const labels=["1주","2주","3주","4주","5주","현재"];
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:126px;display:block;">
+    <defs><linearGradient id="jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+    <line x1="${L}" y1="${ty}" x2="${W-R}" y2="${ty}" stroke="rgba(255,255,255,.55)" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="${W-R}" y="${(+ty-5).toFixed(1)}" text-anchor="end" font-size="10" fill="rgba(255,255,255,.9)" font-weight="700">목표 ${target}${GOAL.unit}</text>
+    <polygon points="${area}" fill="url(#jg)"/>
+    <polyline points="${line}" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${lx}" cy="${ly}" r="4.5" fill="#fff"/>
+    ${labels.map((l,i)=>`<text x="${x(i).toFixed(1)}" y="${H-5}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.72)">${l}</text>`).join("")}</svg>`;
+}
+function renderJourney(){
+  const p=goalPct();
+  document.getElementById("journeyHero").innerHTML=
+   `<div class="jhero-head"><div><div class="jh-label">내 다이어트 목표</div><div class="jh-title">${GOAL.name}</div></div><div class="jh-pct">${p}<span>%</span></div></div>
+    <div class="jh-sub">${GOAL.metric} <b>${GOAL.current}${GOAL.unit}</b> → 목표 <b>${GOAL.target}${GOAL.unit}</b> · 🔥 목표까지 ${Math.abs(GOAL.target-GOAL.current).toFixed(1)}${GOAL.unit} · D-${GOAL.dleft}</div>
+    <div class="jh-chart">${buildGoalChartHero()}</div>`;
+  renderWeek(); renderPlan();
+}
+document.getElementById("homeTabs").addEventListener("click",e=>{
+  const b=e.target.closest(".ht"); if(!b) return;
+  document.querySelectorAll("#homeTabs .ht").forEach(x=>x.classList.toggle("active",x===b));
+  const v=b.dataset.view;
+  document.getElementById("viewGlucose").style.display = v==="glucose"?"block":"none";
+  document.getElementById("viewJourney").style.display = v==="journey"?"block":"none";
+  if(v==="journey") renderJourney();
+  document.getElementById("viewport").scrollTo({top:0});
+});
 
 /* 나만의 혈당 음식 사전 */
 const FOODDICT=[
@@ -859,13 +1017,12 @@ function homeAdvice(a,r){
 function renderAiBubble(){
   const r=READINGS[HOME_IDX], a=analyze(r.fasting,r.postmeal,r.meal), ad=homeAdvice(a,r);
   document.getElementById("aiBubble").innerHTML=
-   `<div class="aibubble">
-     <div class="bubble">
-       <div class="bh"><span class="ev">${ad.event}</span></div>
-       <div class="bt">${ad.msg}</div>
-       <div class="sci">${ad.sci}</div>
-       <button class="bgo" data-go="coach">AI 코치와 자세히 상담하기 ›</button>
-     </div></div>`;
+   `<div class="guide-card">
+      <div class="gc-h">🤖 AI 코치의 안내 <span class="ev">${ad.event}</span></div>
+      <div class="gc-body">${ad.msg}</div>
+      <div class="sci">${ad.sci}</div>
+      <button class="bgo" data-go="coach">AI 코치와 자세히 상담하기 ›</button>
+    </div>`;
 }
 
 /* ====== 목표 (사용자 설정 + 진행률) ====== */
@@ -873,6 +1030,7 @@ const GOAL={ name:"8주 혈당 다이어트", metric:"체중", start:72, current
 const GTREND=[72,71,70.2,69.4,68.9,68.5]; // 주차별 체중(감량 추세)
 function goalPct(){ return Math.max(0,Math.min(100, Math.round((GOAL.current-GOAL.start)/(GOAL.target-GOAL.start)*100))); }
 function renderGoal(){
+  if(!document.getElementById("goalCard")) return;
   const p=goalPct(), C=2*Math.PI*37, off=(C*(1-p/100)).toFixed(1);
   document.getElementById("goalCard").innerHTML=
    `<div class="ring"><svg width="84" height="84">
@@ -1176,7 +1334,7 @@ async function callDify(input){
 }*/
 
 /* 초기화 */
-renderHome(); renderAiBubble(); renderActions(); renderGoal(); renderHomeSummary(); loadReading();
+renderHome(); renderAiBubble(); renderSuggest(); renderGoal(); renderHomeSummary(); loadReading();
 </script>
 <script async src="https://www.instagram.com/embed.js"></script>
 </body>
