@@ -41,6 +41,7 @@
     border-radius:38px; overflow:hidden; box-shadow:0 30px 70px rgba(0,0,0,.18);
     display:flex; flex-direction:column; height:790px; position:relative;
   }
+  body.cap{background:#fff;} body.cap .phone{box-shadow:none; border:1.5px solid #dcdce4;}
   .viewport{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .viewport::-webkit-scrollbar{width:0;}
   .screen{display:none;} .screen.active{display:block;}
@@ -1392,7 +1393,7 @@ async function callDify(input){
 
 /* 초기화 */
 renderHome(); renderAiBubble(); renderSuggest(); renderGoal(); renderHomeSummary(); loadReading();
-(function(){var h=(location.hash||'').replace('#','');if(['home','record','coach','report','store'].includes(h))showScreen(h);})();
+(function(){if(location.search.indexOf('cap')>=0)document.body.classList.add('cap');var h=(location.hash||'').replace('#','');if(['home','record','coach','report','store'].includes(h))showScreen(h);})();
 </script>
 <script async src="https://www.instagram.com/embed.js"></script>
 </body>
