@@ -2,8 +2,16 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>웰다 AI 혈당코치 — 데모</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#6053f3" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="웰다" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" type="image/png" href="icon-192.png" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -100,6 +108,16 @@
   .scorehex .num{font-size:29px; font-weight:800; color:#2a2550; line-height:1;}
   .scorehex .num small{font-size:13px; font-weight:700;}
   .scorehex .lab{font-size:10.5px; color:#6a6790; font-weight:600; margin-top:4px;}
+  /* 중앙 정렬 혈당 히어로 */
+  .hero-center{text-align:center;}
+  .hdate-c{font-size:14px; font-weight:700; color:var(--ink); display:flex; align-items:center; justify-content:center; gap:9px; margin-top:2px;}
+  .hdate-c .nav{color:var(--faint); letter-spacing:4px; font-weight:700;}
+  .hc-label{font-size:12.5px; color:var(--muted); margin-top:18px;}
+  .hc-val{font-size:64px; font-weight:800; letter-spacing:-3px; line-height:1; margin-top:6px; color:var(--ink);}
+  .hc-unit{font-size:18px; font-weight:700; color:var(--muted); letter-spacing:0; margin-left:5px;}
+  .hc-delta{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted); font-weight:600; margin-top:13px;}
+  .hc-delta .dc{width:20px; height:20px; border-radius:50%; background:#e2f3e8; color:#2fa15f; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;}
+  .hero-center .statsbar{text-align:left;}
   .herochart{margin-top:16px;} .herochart svg{width:100%; height:206px; display:block;}
   .statsbar{display:flex; align-items:center; margin-top:16px; padding-top:16px; border-top:1px solid var(--line);}
   .statsbar .st{flex:1; padding-left:4px;}
@@ -522,22 +540,11 @@
 
           <!-- ===== 혈당 뷰 ===== -->
           <div id="viewGlucose">
-            <div class="hero">
-              <div class="hdate">9월 18일(오늘) <span class="nav">‹ ›</span></div>
-              <div class="hmain">
-                <div class="hcur">
-                  <div class="htime">오전 18:35</div>
-                  <div class="hval">96 <small>mg/dL</small>
-                    <span class="harrow"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b4ae0" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l8 9"/><path d="M16 9v7h-7"/></svg></span>
-                    <span class="hrefresh"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b0b3bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 4 21 9 16 9"/></svg></span>
-                  </div>
-                  <div class="hsensor"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6053f3" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#6053f3" stroke="none"/></svg> 센서 연동 모드</div>
-                </div>
-                <div class="scorehex">
-                  <div class="num">50<small>점</small></div>
-                  <div class="lab">혈당 점수</div>
-                </div>
-              </div>
+            <div class="hero hero-center">
+              <div class="hdate-c">9월 18일(오늘) <span class="nav">‹ ›</span></div>
+              <div class="hc-label">오전 18:35 · 센서 연동 모드</div>
+              <div class="hc-val">96<span class="hc-unit">mg/dL</span></div>
+              <div class="hc-delta"><span class="dc">↓</span> 어제보다 14 mg/dL 낮아요</div>
               <div class="herochart" id="heroChart"></div>
               <div class="statsbar">
                 <div class="st"><div class="sl">혈당 점수</div><div class="sv">50<small>점</small></div></div>
