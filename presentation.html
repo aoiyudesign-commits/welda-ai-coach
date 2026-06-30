@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>웰다 AI 혈당코치 — 김유빈 · 대웅제약 AX Engineer 지원</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --purple:#6053F3; --purple-d:#4A42D1; --grad:#B15EFF;
+  --ink:#191C1F; --body:#3A3D40; --mid:#6F7390; --faint:#9A9BB0;
+  --bg:#FFFFFF; --card:#F5F4FD; --line:#ECECF4; --border:#E3E1F4; --soft:#ECEAF8;
+  --warn:#E0902B; --warnbg:#FFF4E6; --green:#2FA15F; --greenbg:#E2F3E8; --sci:#376CD5; --scibg:#EEF3FB; --red:#EE5A6E;
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;background:#e9e9ef;color:var(--ink);}
+#deck{width:100vw;height:100vh;position:relative;overflow:hidden;}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);
+  opacity:0;pointer-events:none;transition:opacity .4s ease, transform .4s ease;transform:translateX(36px);}
+.slide.active{opacity:1;pointer-events:auto;transform:none;}
+.slide.prev{opacity:0;transform:translateX(-36px);}
+.inner{width:min(1090px,93vw);max-height:92vh;}
+/* progress + counter + nav */
+#bar{position:fixed;top:0;left:0;height:3px;background:var(--purple);width:0;transition:width .4s;z-index:60;}
+#counter{position:fixed;bottom:18px;right:26px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--faint);z-index:60;}
+.nav{position:fixed;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:#fff;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:60;color:var(--mid);font-size:20px;box-shadow:0 4px 14px rgba(60,45,120,.1);user-select:none;}
+.nav:hover{color:var(--purple);}
+#prev{left:16px;} #next{right:16px;}
+/* tokens */
+.kick{display:inline-flex;align-items:center;gap:9px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--purple-d);margin-bottom:18px;}
+.kick::before{content:"";width:18px;height:4px;border-radius:3px;background:var(--purple);}
+.display{font-size:clamp(34px,5vw,54px);font-weight:800;line-height:1.16;letter-spacing:-.02em;color:var(--ink);}
+.headline{font-size:clamp(24px,3.3vw,36px);font-weight:800;line-height:1.22;letter-spacing:-.02em;color:var(--ink);}
+.lead{font-size:clamp(15px,1.5vw,18px);line-height:1.6;color:var(--body);}
+.sub{font-size:13.5px;line-height:1.6;color:var(--mid);}
+.em{color:var(--purple-d);font-weight:800;}
+.mt8{margin-top:8px;}.mt16{margin-top:16px;}.mt24{margin-top:24px;}.mt32{margin-top:32px;}
+/* cards */
+.grid{display:grid;gap:20px;}
+.g3{grid-template-columns:repeat(3,1fr);}.g2{grid-template-columns:repeat(2,1fr);}.g5{grid-template-columns:repeat(5,1fr);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;box-shadow:0 10px 28px rgba(60,45,120,.08);}
+.card.soft{background:var(--soft);border:none;}
+.card h3{font-size:19px;font-weight:800;color:var(--purple-d);margin-bottom:11px;}
+.card p{font-size:15px;line-height:1.55;color:var(--body);}
+.card .small{font-size:13.5px;color:var(--mid);margin-top:10px;}
+.quote{background:var(--soft);border-radius:18px;padding:24px 28px;}
+.quote b{color:var(--purple-d);}
+/* pills / chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{font-size:13.5px;font-weight:700;color:var(--purple-d);background:var(--soft);border-radius:999px;padding:9px 17px;}
+/* diagram */
+.flow{display:flex;align-items:stretch;gap:8px;}
+.fbox{flex:1;background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 12px;text-align:center;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(60,45,120,.07);}
+.fbox.pp{background:var(--purple);color:#fff;border:none;}
+.fbox.soft{background:var(--soft);border:none;}
+.arr{display:flex;align-items:center;color:var(--purple);font-weight:800;font-size:18px;}
+/* list rows */
+.rows{display:flex;flex-direction:column;gap:10px;}
+.rrow{display:flex;gap:16px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 22px;box-shadow:0 5px 16px rgba(60,45,120,.05);}
+.rrow .k{font-size:15px;font-weight:800;color:var(--purple-d);min-width:200px;}
+.rrow .v{font-size:14.5px;color:var(--body);line-height:1.45;}
+.rrow.warn{background:var(--warnbg);border:none;} .rrow.ok{background:var(--greenbg);border:none;}
+/* table */
+.tbl{width:100%;border-collapse:separate;border-spacing:0 8px;}
+.tbl td{background:#fff;border:1px solid var(--border);padding:12px 16px;font-size:13px;vertical-align:middle;}
+.tbl td:first-child{border-radius:12px 0 0 12px;font-weight:800;color:var(--purple-d);width:42%;}
+.tbl td:last-child{border-radius:0 12px 12px 0;color:var(--body);}
+/* mockups */
+.mocks{display:flex;gap:16px;justify-content:center;margin-top:22px;}
+.mocks figure{flex:1;text-align:center;}
+.mocks img{width:100%;max-height:440px;object-fit:contain;}
+.mocks figcaption{font-size:12.5px;color:var(--mid);margin-top:6px;line-height:1.4;}
+.mocks figcaption b{color:var(--purple-d);font-size:13.5px;}
+/* code */
+.code{font-family:'Menlo',monospace;font-size:12px;line-height:1.65;color:var(--body);white-space:pre;}
+/* cover */
+.cover{display:flex;width:100%;height:100%;}
+.cover .left{width:38%;background:linear-gradient(160deg,var(--purple),var(--grad));color:#fff;display:flex;flex-direction:column;justify-content:center;padding:0 6%;}
+.cover .right{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 6%;}
+.hex{width:96px;height:104px;background:#fff;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:800;color:var(--purple);margin-bottom:28px;}
+.closing{background:linear-gradient(150deg,var(--purple),var(--grad));}
+.closing .inner *{color:#fff;}
+.closing .display{color:#fff;}
+.linkpill{display:inline-block;font-size:14px;font-weight:800;color:#fff;background:rgba(255,255,255,.18);border-radius:999px;padding:12px 20px;margin-top:24px;}
+.linkline{display:inline-block;font-size:13px;font-weight:800;color:var(--purple-d);margin-top:18px;text-decoration:none;}
+.linkline:hover{text-decoration:underline;}
+a.linkpill{text-decoration:none;cursor:pointer;}
+a.linkpill:hover{background:rgba(255,255,255,.28);}
+/* print → PDF */
+@media print{
+  @page{size:13.333in 7.5in;margin:0;}
+  html,body{height:auto;overflow:visible;background:#fff;}
+  #bar,#counter,.nav{display:none!important;}
+  #deck{height:auto;}
+  .slide{position:relative;inset:auto;opacity:1!important;transform:none!important;display:flex!important;
+    width:13.333in;height:7.5in;page-break-after:always;break-after:page;}
+  .card,.fbox,.rrow,.tbl td{box-shadow:none!important;}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="counter"></div>
+<div class="nav" id="prev">‹</div>
+<div class="nav" id="next">›</div>
+<div id="deck">
+
+  <!-- 1 COVER -->
+  <section class="slide active">
+    <div class="cover">
+      <div class="left">
+        <div style="background:#fff;border-radius:14px;padding:15px 20px;display:inline-block;margin-bottom:26px;box-shadow:0 8px 22px rgba(0,0,0,.12)"><img src="assets/welda-logo.png" style="height:34px;display:block" alt="welda"></div>
+        <div style="font-size:30px;font-weight:800;margin-top:4px">AI 혈당코치</div>
+        <div style="font-size:13px;opacity:.9;margin-top:16px;line-height:1.6">CGM 실측 데이터 기반<br/>AI 다이어트 코치 서비스</div>
+      </div>
+      <div class="right">
+        <div class="kick">Portfolio · AX Engineer</div>
+        <div class="display">Multi-Agent로<br/>‘복잡한 의사결정’을 자동화하다</div>
+        <div class="lead mt24">측정 → 이해 → 행동 → 재측정 → 강화.<br/>5개의 AI 에이전트가 협업해 안전한 개인화 코칭을 만드는 헬스케어 서비스.</div>
+        <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap">
+          <div class="chip">김유빈 · 서비스기획/UX → AX Engineer</div>
+          <div class="chip">대웅제약 ‘웰다’ AX Engineer 지원</div>
+        </div>
+        <a class="linkline" href="https://aoiyudesign-commits.github.io/welda-ai-coach/" target="_blank" rel="noopener">🔗 라이브 데모 보기 · aoiyudesign-commits.github.io/welda-ai-coach</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 ABOUT -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">About</div>
+      <div class="headline">기획자의 사용자 플로우 설계 위에, Agentic AI를 얹다</div>
+      <div class="lead mt16">UX·서비스 기획 3년 5개월의 강점(사용자 플로우·구조화·협업)에 멀티에이전트 LLM 설계·구현을 결합했습니다.</div>
+      <div class="grid g3 mt32">
+        <div class="card"><h3>🧭 기획 / UX</h3><p>서비스기획·IA·사용자 플로우, 디자인 시스템 구축(QA 80%↓)</p><div class="small">AI Agent 서비스(Agent Studio) 기획·설계 경험</div></div>
+        <div class="card"><h3>🤖 Agentic AI</h3><p>멀티에이전트 워크플로우 설계, 모델 라우팅·비용 최적화</p><div class="small">안전성 검수(Critic)·반려 루프 등 복잡한 의사결정 구현</div></div>
+        <div class="card"><h3>🏥 헬스케어 도메인</h3><p>UNO HOME IoT 헬스케어(CES 2026) 총괄</p><div class="small">측정 데이터→사용자 가치, 제약 규제 감수성</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 PROBLEM -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Problem</div>
+      <div class="headline">CGM은 ‘측정’까지만 한다 — 비어 있는 ‘행동’ 레이어</div>
+      <div class="lead mt16">웰다 같은 CGM 서비스는 혈당을 실시간으로 <span class="em">측정·표시</span>하지만, ‘그래서 무엇을 어떻게 바꿔야 하는지’의 <span class="em">행동·해석 레이어가 비어 있다.</span></div>
+      <div class="grid g3 mt24">
+        <div class="card soft"><h3 style="color:var(--ink)">✅ 측정</h3><p>CGM 센서가 24시간 혈당 추적</p></div>
+        <div class="card soft"><h3 style="color:var(--ink)">✅ 점수화</h3><p>혈당 점수 등 지표 제공</p></div>
+        <div class="card" style="background:var(--warnbg);border:none"><h3 style="color:var(--warn)">❌ 해석·행동</h3><p>왜 올랐고 / 뭘 먹고 / 뭘 사야 하나 — 비어 있음</p></div>
+      </div>
+      <div class="quote mt24"><div style="font-size:15px;color:var(--ink)">다이어트는 한 번의 코칭이 아니라 <b>반복되는 작은 성공</b>으로 지속된다.</div>
+        <div class="sub mt8">→ 실측 데이터를 ‘해석 + 행동 + 큐레이션’으로 바꾸고, 그 과정을 지속 루프로 닫는 것이 과제.</div></div>
+    </div>
+  </section>
+
+  <!-- 4 SERVICE GOAL -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Service Goal</div>
+      <div class="headline">서비스 목표 — 웰다의 약속을 ‘행동’으로 잇다</div>
+      <div class="quote mt16"><div style="font-size:16px"><b>“무작정 굶는 다이어트가 아닌, 데이터로 내 몸을 이해하고 지속 가능한 식습관”</b></div>
+        <div class="sub mt8">웰다 — 국내 유일 제약 기반 CGM 혈당관리 솔루션 · AI 음식 인식·혈당 분석·맞춤 큐레이션 · Medical Advisors 신뢰</div></div>
+      <div class="grid g3 mt24">
+        <div class="card"><h3>측정 → 지속 가능한 행동</h3><p>‘어떻게 하면 살이 빠지는지’를 데이터로 명확히 — 측정·점수에서 행동·습관으로</p></div>
+        <div class="card"><h3>근거 기반 개인화 코칭</h3><p>AI가 과학적 대사 원리·임상 근거로 안전하게 코칭 → 제약사 신뢰 수준</p></div>
+        <div class="card"><h3>코칭 → 비즈니스 연결</h3><p>혈당 맞춤 제품·레시피 큐레이션으로 행동과 매출을 한 동선에</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 APPROACH -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Approach</div>
+      <div class="headline">단순 자동화가 아니라, ‘행동을 바꾸는’ 지속 루프</div>
+      <div class="flow mt32">
+        <div class="fbox pp">측정<br/>(CGM)</div><div class="arr">→</div>
+        <div class="fbox soft">이해<br/>(AI 분석·근거)</div><div class="arr">→</div>
+        <div class="fbox soft">행동<br/>(코칭·실행)</div><div class="arr">→</div>
+        <div class="fbox soft">재측정</div><div class="arr">→</div>
+        <div class="fbox pp">강화<br/>(증명·동기)</div>
+      </div>
+      <div class="sub mt16" style="text-align:center">⟲ 습관 형성 / 리텐션 — 측정값이 쌓일수록 더 똑똑해지는 개인화</div>
+      <div class="grid g2 mt24">
+        <div class="card soft"><h3 style="color:var(--mid)">단순 업무 자동화</h3><p>입력 → 정해진 출력(규칙 기반) · ‘무엇을 했는지’ 기록에서 끝</p></div>
+        <div class="card"><h3>이 프로젝트 (복잡한 의사결정)</h3><p>분석·코칭·검수·추천 역할 분리 + 반려 루프 — 안전성·맥락을 ‘판단’해 통과/재작성 결정</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 PLANNING 1 -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Planning · Research</div>
+      <div class="headline">기획 ① 도메인 리서치 & 인사이트</div>
+      <div class="rows mt24">
+        <div class="rrow"><div class="k">웰다 서비스 분석</div><div class="v">CGM 기반 ‘제한 아닌 지속가능한 식습관’ — 음식 인식·혈당 분석·맞춤 큐레이션</div></div>
+        <div class="rrow"><div class="k">사용자 진입장벽</div><div class="v">측정·연동의 복잡함이 이탈 요인 → ‘혈당은 기기가, 식단만 사용자가’ 원칙</div></div>
+        <div class="rrow"><div class="k">CGM 데이터의 무기</div><div class="v">‘내 몸이 음식에 어떻게 반응하는지 점점 더 잘 알게 되는 것’ = 지속 사용 이유</div></div>
+        <div class="rrow"><div class="k">제약사 맥락</div><div class="v">의료·건강기능식품 표시광고 규제 → 안전성 설계가 신뢰의 핵심</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 PLANNING 2 -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Planning · IA & Flow</div>
+      <div class="headline">기획 ② 정보구조(IA)와 사용자 플로우</div>
+      <div class="chips mt24"><div class="chip">🏠 홈</div><div class="chip">📝 기록</div><div class="chip">🤖 AI 코치</div><div class="chip">📖 웰니스</div><div class="chip">🛒 스토어</div></div>
+      <div class="lead mt24" style="font-weight:800;color:var(--ink)">능동형 메인 플로우 (기기가 먼저 말을 건다)</div>
+      <div class="flow mt16">
+        <div class="fbox">CGM 스파이크 감지</div><div class="arr">→</div>
+        <div class="fbox">식단 기록(사용자)</div><div class="arr">→</div>
+        <div class="fbox pp">AI 코치 5-Agent</div><div class="arr">→</div>
+        <div class="fbox">코칭·의학자문·제품</div><div class="arr">→</div>
+        <div class="fbox">행동 → 재측정</div>
+      </div>
+      <div class="quote mt24"><div style="font-size:14px;color:var(--ink)"><b>설계 원칙</b> &nbsp;① 입력 최소화(혈당=기기·식단=사용자) &nbsp; ② 데이터→행동 전환 &nbsp; ③ 신뢰 우선(검수) &nbsp; ④ 결과의 재노출(홈·스토어 순환)</div>
+        <div class="sub mt8">→ UNO HOME 측정 UX 개선 철학과 동일 (진입장벽↓)</div></div>
+    </div>
+  </section>
+
+  <!-- 8 SERVICE & DEMO -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Service & Demo</div>
+      <div class="headline">서비스 개요 — 5탭 앱으로 구현 (라이브 데모)</div>
+      <div class="grid g2 mt24" style="grid-template-columns:1.5fr 1fr">
+        <div class="rows">
+          <div class="rrow"><div class="k" style="min-width:90px">홈</div><div class="v">실시간 혈당 추이(실선→예측 점선)·AI 코치 안내·추천→일정 추가</div></div>
+          <div class="rrow"><div class="k" style="min-width:90px">기록</div><div class="v">리포트(건강점수 게이지·활동 히트맵·음식 영향)·식사기록</div></div>
+          <div class="rrow"><div class="k" style="min-width:90px">AI 코치</div><div class="v">혈당+식단 → 5-Agent 협업 → 코칭·의학자문·제품</div></div>
+          <div class="rrow"><div class="k" style="min-width:90px">웰니스·스토어</div><div class="v">공식 인스타 콘텐츠 / 레시피 릴스 → 대웅 제품 구매</div></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center">
+          <img src="shots/home.png" style="max-height:420px;width:auto;border-radius:16px" alt="홈 화면">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICE SCREENS (목업) -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Service Screens</div>
+      <div class="headline">서비스 화면 — 측정에서 행동까지</div>
+      <div class="mocks">
+        <figure><img src="shots/home.png" alt="홈"><figcaption><b>홈 · 실시간 혈당</b><br/>추이 그래프 + AI 코치 안내</figcaption></figure>
+        <figure><img src="shots/coach.png" alt="AI 코치"><figcaption><b>AI 코치</b><br/>혈당+식단 → 5-Agent</figcaption></figure>
+        <figure><img src="shots/record.png" alt="리포트"><figcaption><b>리포트</b><br/>건강점수·활동 히트맵</figcaption></figure>
+        <figure><img src="shots/store.png" alt="스토어"><figcaption><b>스토어</b><br/>레시피 릴스→대웅 제품</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 MULTI-AGENT WHY -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Multi-Agent · Why</div>
+      <div class="headline">왜 Multi-Agent Orchestration인가</div>
+      <div class="lead mt16">분석·코칭·의학자문·제품추천·안전성검수는 <span class="em">요구 역량이 모두 다르다.</span> 하나의 모델에 전부 시키면 품질·비용·안전성이 동시에 흔들린다 → 역할을 ‘분리’하고 ‘오케스트레이션’.</div>
+      <div class="grid g3 mt32">
+        <div class="card"><h3>🎯 품질</h3><p>역할별 전문화 — 코칭 톤과 분석 정확도를 따로 최적화</p></div>
+        <div class="card"><h3>💸 비용</h3><p>모델 라우팅 — 단순 작업은 경량, 코칭만 고품질 모델</p></div>
+        <div class="card"><h3>🛡 안전성</h3><p>독립 검수자(Critic)가 의학·표시광고 리스크를 판단·차단</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 ARCHITECTURE -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Multi-Agent · Architecture</div>
+      <div class="headline">멀티에이전트 아키텍처 (5 Agents)</div>
+      <div class="flow mt32" style="align-items:center">
+        <div class="fbox soft" style="flex:.7">입력<br/>혈당·식단</div><div class="arr">→</div>
+        <div class="fbox" style="flex:.9">① Analyst<br/><span style="font-weight:500;color:var(--mid);font-size:11px">혈당 분석·구조화 · 경량</span></div><div class="arr">→</div>
+        <div style="flex:1.2;display:flex;flex-direction:column;gap:8px">
+          <div class="fbox">② Coach <span style="font-weight:500;color:var(--mid);font-size:11px">코칭·고품질</span></div>
+          <div class="fbox">⑤ Medical Reviewer <span style="font-weight:500;color:var(--mid);font-size:11px">의학 자문</span></div>
+          <div class="fbox">④ Recommender <span style="font-weight:500;color:var(--mid);font-size:11px">제품 추천</span></div>
+        </div><div class="arr">→</div>
+        <div class="fbox pp" style="flex:1">③ Critic<br/><span style="font-weight:500;font-size:11px;opacity:.9">안전성·표시광고 검수<br/>문제 시 ②로 반려</span></div>
+      </div>
+      <div class="quote mt24"><div style="font-size:14.5px;color:var(--ink)">↺ <b>Critic이 ‘판단’해 통과/반려를 결정하는 의사결정 루프</b> (단순 파이프라인이 아님)</div>
+      <div class="sub mt8">모델 라우팅: 분석·검수·추천 = 경량(Flash/Haiku) · 코칭 = 고품질(Pro/Opus) → 비용 최적화</div></div>
+    </div>
+  </section>
+
+  <!-- 11 COMPLEX DECISION -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Core · Complex Decision</div>
+      <div class="headline">핵심 — ‘복잡한 의사결정’을 내리는 Critic 루프</div>
+      <div class="lead mt16">정해진 변환이 아니라, 맥락과 안전 기준을 <span class="em">‘판단’</span>해 통과/재작성을 결정. 공고의 ‘복잡한 의사결정 Multi-Agent Orchestration’ 요건에 직접 대응.</div>
+      <div class="grid g2 mt24">
+        <div class="card"><h3>● 위험 수치 분기</h3><p>공복≥126·식후≥200 → risk_flag → ‘의료진 상담 권장’ 강제 삽입</p></div>
+        <div class="card"><h3>● 안전성 판단·반려</h3><p>의학적 단정·약물 권유·과장·공포 조장 적발 시 verdict=revise → Coach로 반려</p></div>
+        <div class="card"><h3>● 건강기능식품 표시</h3><p>‘치료/완치’ 단정 차단, 식약처 기능성 표현 범위로 교정</p></div>
+        <div class="card"><h3>● 의학 자문 윤리</h3><p>실존 의사 사칭·개인 진단 차단, 면책 고지 강제</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 BUILT WITH CLAUDE -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">How · Built with Claude</div>
+      <div class="headline">Claude로 기획부터 배포까지 — End-to-End</div>
+      <div class="lead mt16">Claude(Claude Code)를 활용해 <span class="em">도메인 리서치 · 문서 구조화 · 에이전트 프롬프트 설계 · 데모 구현 · 배포</span>를 한 흐름으로 진행.</div>
+      <div class="flow mt24" style="gap:10px">
+        <div class="fbox soft">① 리서치·IA<br/><span style="font-weight:500;color:var(--mid);font-size:11px">도메인·플로우 설계</span></div>
+        <div class="fbox">② 문서 구조화<br/><span style="font-weight:500;color:var(--mid);font-size:11px">역할·기준을 md/폴더</span></div>
+        <div class="fbox soft">③ 프롬프트 설계<br/><span style="font-weight:500;color:var(--mid);font-size:11px">5 에이전트 md 표준화</span></div>
+        <div class="fbox">④ 데모 구현<br/><span style="font-weight:500;color:var(--mid);font-size:11px">웹앱(welda 토큰)</span></div>
+        <div class="fbox soft">⑤ 배포<br/><span style="font-weight:500;color:var(--mid);font-size:11px">GitHub Pages·PWA</span></div>
+      </div>
+      <div class="quote mt24"><div class="sub" style="font-weight:700">“에이전트화는 설명을 길게 쓰는 게 아니라, 반복 기준을 파일·폴더에 남기는 일” — 기준을 코드처럼 저장</div></div>
+    </div>
+  </section>
+
+  <!-- 13 DOC STRUCTURE -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">How · Doc Structure</div>
+      <div class="headline">에이전트 문서 구조화 & 마크다운 정리</div>
+      <div class="grid g2 mt24">
+        <div class="card">
+          <h3>📁 프로젝트 구조</h3>
+          <div class="code mt8">welda-ai-coach/
+├─ README · UX_FLOW · PORTFOLIO_ONEPAGER
+├─ BUILD_GUIDE · DIFY_CODE_NODES · CHECKLIST
+├─ prompts/
+│   ├─ 1_analyst.md   2_coach.md
+│   ├─ 3_critic.md    4_recommender.md
+│   └─ 5_medical_reviewer.md
+├─ data/  sample_inputs · dwhc_products .json
+└─ web/   index.html (+ img)</div>
+        </div>
+        <div class="card">
+          <h3>📄 프롬프트 md 표준 구조</h3>
+          <div class="rows" style="gap:7px;margin-top:6px">
+            <div class="rrow" style="padding:9px 13px"><div class="k" style="min-width:130px;font-size:12.5px">역할 / PURPOSE</div><div class="v" style="font-size:12px">무엇을 판단·생성하는가</div></div>
+            <div class="rrow" style="padding:9px 13px"><div class="k" style="min-width:130px;font-size:12.5px">입력 / INPUT</div><div class="v" style="font-size:12px">입력 변수(analysis·goal·risk_flag)</div></div>
+            <div class="rrow" style="padding:9px 13px"><div class="k" style="min-width:130px;font-size:12.5px">규칙 / STEPS</div><div class="v" style="font-size:12px">READ→DECIDE→MAKE→CHECK</div></div>
+            <div class="rrow" style="padding:9px 13px"><div class="k" style="min-width:130px;font-size:12.5px">출력 / OUTPUT</div><div class="v" style="font-size:12px">JSON 형식 고정(코드블록 금지)</div></div>
+            <div class="rrow" style="padding:9px 13px"><div class="k" style="min-width:130px;font-size:12.5px">금지 / GUARD</div><div class="v" style="font-size:12px">의학 단정·과대표현·사칭 차단</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sub mt16" style="text-align:center">방법론: DECISION → DATA(이번재료/반복기준) → ACTION → CONTROL · 에이전트 1개 = md 1개 → Dify 노드에 그대로 적용</div>
+    </div>
+  </section>
+
+  <!-- 14 MONITORING -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Performance · Cost</div>
+      <div class="headline">성능·비용·안정성 모니터링 (요건 ⑤)</div>
+      <div class="grid g3 mt24">
+        <div class="card"><h3>모델 라우팅</h3><p>역할별 모델 등급 분리</p><div class="small">단일 고급모델 대비 비용 절감</div></div>
+        <div class="card"><h3>Langfuse 관측</h3><p>에이전트별 토큰·비용·latency·trace</p><div class="small">병목·비용 추적 → 지속 개선</div></div>
+        <div class="card"><h3>안전성 지표</h3><p>Critic 적발률·반려 횟수</p><div class="small">위험 표현 자동 차단 모니터</div></div>
+      </div>
+      <div class="quote mt24"><div style="font-size:14px;color:var(--ink)"><b>성과 측정 프레임</b> (데모 실행 로그 기반 기입)</div>
+        <div class="sub mt8">코칭 작성 시간 수동 N분 → AI N초 · 비용 단일모델 대비 N% 절감 · 안전성 적발률 N건/N건</div></div>
+    </div>
+  </section>
+
+  <!-- 15 SAFETY -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Safety · Regulation</div>
+      <div class="headline">제약 도메인 신뢰 — 안전성을 ‘설계’로 보장</div>
+      <div class="lead mt16">의료 AI에서 가장 큰 리스크(잘못된 단정·과대광고·사칭)를 <span class="em">설계 단계에서 차단</span>.</div>
+      <div class="rows mt24">
+        <div class="rrow warn"><div class="k" style="min-width:90px;color:var(--warn)">❌ 차단</div><div class="v">‘당뇨입니다’ 등 의학적 단정 / 약물·용량 권유</div></div>
+        <div class="rrow warn"><div class="k" style="min-width:90px;color:var(--warn)">❌ 차단</div><div class="v">‘완치·정상화’ 효과 보장 / 공포 조장 / 의료행위 대체 암시</div></div>
+        <div class="rrow warn"><div class="k" style="min-width:90px;color:var(--warn)">❌ 차단</div><div class="v">건강기능식품 ‘치료·예방’ 단정 / 실존 의사 사칭</div></div>
+        <div class="rrow ok"><div class="k" style="min-width:90px;color:var(--green)">✅ 강제</div><div class="v">위험 구간 시 의료진 상담 권장 / 면책 고지 / 식약처 기능성 표현</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 CONTINUOUS UX -->
+  <section class="slide">
+    <div class="inner">
+      <div class="kick">Continuous UX & Business</div>
+      <div class="headline">지속 다이어트 UX 루프 + 비즈니스 연결</div>
+      <div class="grid g3 mt24">
+        <div class="card soft"><h3>개인화 학습</h3><p>나만의 혈당 음식 사전 — 쓸수록 똑똑해지는 내 데이터</p></div>
+        <div class="card soft"><h3>행동 강화</h3><p>같은 메뉴 Before/After — ‘지난번 +94 → 오늘 +76’ 증명</p></div>
+        <div class="card soft"><h3>행동 추적</h3><p>오늘의 플랜 — 예정·진행·완료 (제안→실행→확인)</p></div>
+      </div>
+      <div class="quote mt24"><div style="font-size:14.5px;color:var(--ink)"><b>데이터 → 매출 연결</b> (요건 ① 비즈니스 도메인)</div>
+        <div class="sub mt8">혈당 데이터 기반 대웅 헬스케어몰 제품 큐레이션 + 혈당 맞춤 레시피 릴스(콘텐츠 커머스) → 코칭(행동)과 구매(매출)를 한 동선에</div></div>
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="slide closing">
+    <div class="inner">
+      <div class="display">데이터를 ‘보여주는’ 앱에서,<br/>데이터로 ‘함께 행동을 바꾸는’ 앱으로.</div>
+      <div class="lead mt24" style="color:rgba(255,255,255,.92)">기획자의 사용자 플로우 설계 위에 멀티에이전트·안전성·비용 최적화를 얹어,<br/>측정→행동→강화의 지속 루프와 복잡한 의사결정을 직접 설계·구현했습니다.</div>
+      <a class="linkpill" href="https://aoiyudesign-commits.github.io/welda-ai-coach/" target="_blank" rel="noopener">🔗 라이브 데모 보기 ›</a>
+      <div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:16px">김유빈 · 대웅제약 ‘웰다’ AX Engineer 경력직 지원</div>
+    </div>
+  </section>
+
+</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>{s.classList.toggle('active',k===i);s.classList.toggle('prev',k<i);});
+  document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+  document.getElementById('counter').textContent=(i+1)+' / '+slides.length;
+}
+document.getElementById('next').onclick=()=>show(i+1);
+document.getElementById('prev').onclick=()=>show(i-1);
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1);}
+  if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();show(i-1);}
+  if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);
+});
+show(0);
+</script>
+</body>
+</html>
